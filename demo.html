@@ -404,6 +404,15 @@
                 document.getElementById('apply-font-settings').addEventListener('click', () => this.applyFontSettings());
                 document.getElementById('close-font-modal').addEventListener('click', () => this.hideModal('font-modal'));
                 
+                // 主页面字体选择器变化时自动保存
+                document.getElementById('font-style').addEventListener('change', () => {
+                    this.fontSettings.family = document.getElementById('font-style').value;
+                    this.saveSettings();
+                    
+                    // 显示字体切换反馈
+                    this.showFontChangeNotification();
+                });
+                
                 // 打印管理
                 document.getElementById('manage-print-btn').addEventListener('click', () => this.showPrintModal());
                 document.getElementById('show-header').addEventListener('change', (e) => {
@@ -549,6 +558,8 @@
             }
 
             updateFontModalSettings() {
+                // 同步字体选择器的值到模态框
+                document.getElementById('font-style').value = this.fontSettings.family;
                 document.getElementById('font-weight-select').value = this.fontSettings.weight;
                 document.getElementById('font-style-select').value = this.fontSettings.style;
             }
@@ -575,6 +586,10 @@
                 this.fontSettings.family = document.getElementById('font-style').value;
                 this.fontSettings.weight = document.getElementById('font-weight-select').value;
                 this.fontSettings.style = document.getElementById('font-style-select').value;
+                
+                // 同步到主页面的字体选择器
+                document.getElementById('font-style').value = this.fontSettings.family;
+                
                 this.saveSettings();
                 this.hideModal('font-modal');
                 alert('字体设置已应用');
@@ -697,8 +712,9 @@
                 const lineSpacing = parseInt(document.getElementById('line-spacing').value);
                 const fontSize = parseInt(document.getElementById('font-size').value);
                 
-                // 应用字体设置
-                doc.setFont(this.fontSettings.family);
+                // 应用字体设置 - 确保使用最新的字体选择
+                const currentFont = document.getElementById('font-style').value;
+                doc.setFont(currentFont);
 
                 const pageHeight = doc.internal.pageSize.getHeight();
                 const pageWidth = doc.internal.pageSize.getWidth();
@@ -723,7 +739,7 @@
                         }
                         
                         doc.addPage();
-                        doc.setFont(this.fontSettings.family);
+                        doc.setFont(currentFont);
                         pageNumber++;
                         y = margins.top;
                         
@@ -798,7 +814,7 @@
                             <div class="text-sm text-gray-600 space-y-1">
                                 <p>📄 总页数: ${pageNumber} 页</p>
                                 <p>📝 单词数量: ${words.length} 个</p>
-                                <p>🔤 字体: ${this.fontSettings.family}</p>
+                                <p>🔤 字体: ${currentFont}</p>
                                 <p>📏 页面: ${pageSize.toUpperCase()} ${this.printSettings.orientation === 'portrait' ? '纵向' : '横向'}</p>
                             </div>
                             <p class="text-xs text-gray-500 mt-4">点击"下载PDF"按钮保存文件</p>
@@ -817,8 +833,30 @@
             }
 
             updateUI() {
+                // 恢复保存的字体设置到UI
+                document.getElementById('font-style').value = this.fontSettings.family;
+                
                 // 触发初始化事件
                 document.getElementById('word-source').dispatchEvent(new Event('change'));
+            }
+
+            // 显示字体切换通知
+            showFontChangeNotification() {
+                const notification = document.createElement('div');
+                notification.className = 'fixed top-4 right-4 bg-blue-500 text-white px-4 py-2 rounded-lg shadow-lg z-50 transition-opacity duration-300';
+                notification.textContent = `字体已切换为: ${this.fontSettings.family}`;
+                
+                document.body.appendChild(notification);
+                
+                // 3秒后自动消失
+                setTimeout(() => {
+                    notification.style.opacity = '0';
+                    setTimeout(() => {
+                        if (notification.parentNode) {
+                            notification.parentNode.removeChild(notification);
+                        }
+                    }, 300);
+                }, 2000);
             }
         }
 
