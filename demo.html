@@ -909,18 +909,20 @@
                         }
                     }
 
-                    // 标准英文四线格比例设计
-                    // 参考：上伸部分:主体部分:下伸部分 = 2:2:1.5的比例
-                    const ascenderHeight = fontSize * 0.8;      // 上伸部分（如b,d,h的上部）
-                    const xHeight = fontSize * 0.8;             // x-height（小写字母主体高度，如a,c,e）
-                    const descenderHeight = fontSize * 0.6;     // 下伸部分（如g,j,p的下部）
-                    const totalGridHeight = ascenderHeight + xHeight + descenderHeight;
+                    // 标准英文四线格设计 - 基于字体自然比例
+                    // jsPDF中字体的自然baseline定位，我们围绕这个调整线条位置
+                    const fontBaseline = y + lineSpacing * 0.7; // 字体基线位置
                     
-                    // 计算各线条位置（从上到下）
-                    const baseLineY = y + (lineSpacing - totalGridHeight) / 2 + ascenderHeight + xHeight;  // 基线（第3线）
-                    const topLineY = baseLineY - ascenderHeight - xHeight;                                  // 顶线（第1线）
-                    const waistLineY = baseLineY - xHeight;                                                 // 腰线（第2线）
-                    const descenderLineY = baseLineY + descenderHeight;                                     // 底线（第4线）
+                    // 根据字体大小计算四线格间距
+                    const ascenderSpace = fontSize * 0.7;     // 上伸空间（b,d,h等上部）
+                    const xHeightSpace = fontSize * 0.5;      // x-height空间（a,c,e等主体）
+                    const descenderSpace = fontSize * 0.4;    // 下伸空间（g,j,p等下部）
+                    
+                    // 四线格位置（从上到下）
+                    const topLineY = fontBaseline - ascenderSpace;           // 顶线
+                    const waistLineY = fontBaseline - xHeightSpace;          // 腰线
+                    const baseLineY = fontBaseline;                          // 基线（字体自然基线）
+                    const descenderLineY = fontBaseline + descenderSpace;    // 底线
 
                     // 根据线条样式设置绘制线条
                     doc.setDrawColor(220, 220, 220);
@@ -968,9 +970,8 @@
 
                     // 绘制原始单词（黑色）
                     doc.setTextColor(0, 0, 0);
-                    // 调整字体大小以适配四线格的x-height
-                    const adjustedFontSize = xHeight * 1.2; // 让小写字母主体部分刚好填满腰线到基线的空间
-                    doc.setFontSize(adjustedFontSize);
+                    // 使用原始字体大小，让jsPDF自然处理字母高度
+                    doc.setFontSize(fontSize);
                     
                     // 应用字母间距（如果是手写体）
                     if (fontConfig.letterSpacing) {
@@ -988,7 +989,7 @@
                     const opacity = this.fontSettings.traceOpacity || 180;
                     doc.setTextColor(opacity, opacity, opacity);
                     // 确保描红字体大小与原始字体一致
-                    doc.setFontSize(adjustedFontSize);
+                    doc.setFontSize(fontSize);
                     
                     for (let j = 0; j < repetitions; j++) {
                         const x = margins.left + columnWidth * (j + 1.2);
