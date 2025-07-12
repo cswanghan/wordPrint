@@ -436,50 +436,59 @@
                 return custom;
             }
 
+            // 安全的事件监听器绑定
+            addEventListenerSafe(id, event, handler) {
+                const element = document.getElementById(id);
+                if (element) {
+                    element.addEventListener(event, handler);
+                } else {
+                    console.warn(`Element with id '${id}' not found`);
+                }
+            }
+
             // 事件监听器初始化
             initializeEventListeners() {
                 // 主要功能
-                document.getElementById('word-source').addEventListener('change', (e) => this.handleWordSourceChange(e));
-                document.getElementById('generate-pdf').addEventListener('click', () => this.handleGeneratePDF());
-                document.getElementById('preview-pdf-btn').addEventListener('click', () => this.handlePreviewPDF());
+                this.addEventListenerSafe('word-source', 'change', (e) => this.handleWordSourceChange(e));
+                this.addEventListenerSafe('generate-pdf', 'click', () => this.handleGeneratePDF());
+                this.addEventListenerSafe('preview-pdf-btn', 'click', () => this.handlePreviewPDF());
                 
                 // 字库管理
-                document.getElementById('manage-wordbanks-btn').addEventListener('click', () => this.showWordBankModal());
-                document.getElementById('add-wordbank-btn').addEventListener('click', () => this.showWordBankModal());
-                document.getElementById('delete-wordbank-btn').addEventListener('click', () => this.deleteSelectedWordBank());
-                document.getElementById('save-wordbank-btn').addEventListener('click', () => this.saveNewWordBank());
-                document.getElementById('close-wordbank-modal').addEventListener('click', () => this.hideModal('wordbank-modal'));
+                this.addEventListenerSafe('manage-wordbanks-btn', 'click', () => this.showWordBankModal());
+                this.addEventListenerSafe('add-wordbank-btn', 'click', () => this.showWordBankModal());
+                this.addEventListenerSafe('delete-wordbank-btn', 'click', () => this.deleteSelectedWordBank());
+                this.addEventListenerSafe('save-wordbank-btn', 'click', () => this.saveNewWordBank());
+                this.addEventListenerSafe('close-wordbank-modal', 'click', () => this.hideModal('wordbank-modal'));
                 
                 // 字体管理
-                document.getElementById('manage-fonts-btn').addEventListener('click', () => this.showFontModal());
-                document.getElementById('preview-font-btn').addEventListener('click', () => this.showFontModal());
-                document.getElementById('font-style').addEventListener('change', () => this.updateFontPreview());
-                document.getElementById('custom-preview-text').addEventListener('input', () => this.updateFontPreview());
-                document.getElementById('font-weight-select').addEventListener('change', () => this.updateFontPreview());
-                document.getElementById('font-style-select').addEventListener('change', () => this.updateFontPreview());
-                document.getElementById('apply-font-settings').addEventListener('click', () => this.applyFontSettings());
-                document.getElementById('close-font-modal').addEventListener('click', () => this.hideModal('font-modal'));
+                this.addEventListenerSafe('manage-fonts-btn', 'click', () => this.showFontModal());
+                this.addEventListenerSafe('preview-font-btn', 'click', () => this.showFontModal());
+                this.addEventListenerSafe('custom-preview-text', 'input', () => this.updateFontPreview());
+                this.addEventListenerSafe('trace-opacity-select', 'change', () => this.updateTraceSettings());
+                this.addEventListenerSafe('line-style-select', 'change', () => this.updateTraceSettings());
+                this.addEventListenerSafe('apply-font-settings', 'click', () => this.applyFontSettings());
+                this.addEventListenerSafe('close-font-modal', 'click', () => this.hideModal('font-modal'));
                 
-                // 主页面字体选择器变化时自动保存
-                document.getElementById('font-style').addEventListener('change', () => {
+                // 主页面字体选择器变化时处理
+                this.addEventListenerSafe('font-style', 'change', () => {
                     this.fontSettings.family = document.getElementById('font-style').value;
                     this.saveSettings();
-                    
-                    // 显示字体切换反馈
+                    this.updateFontPreview();
                     this.showFontChangeNotification();
                 });
                 
                 // 打印管理
-                document.getElementById('manage-print-btn').addEventListener('click', () => this.showPrintModal());
-                document.getElementById('show-header').addEventListener('change', (e) => {
-                    document.getElementById('header-text').disabled = !e.target.checked;
+                this.addEventListenerSafe('manage-print-btn', 'click', () => this.showPrintModal());
+                this.addEventListenerSafe('show-header', 'change', (e) => {
+                    const headerText = document.getElementById('header-text');
+                    if (headerText) headerText.disabled = !e.target.checked;
                 });
-                document.getElementById('apply-print-settings').addEventListener('click', () => this.applyPrintSettings());
-                document.getElementById('close-print-modal').addEventListener('click', () => this.hideModal('print-modal'));
+                this.addEventListenerSafe('apply-print-settings', 'click', () => this.applyPrintSettings());
+                this.addEventListenerSafe('close-print-modal', 'click', () => this.hideModal('print-modal'));
                 
                 // PDF预览
-                document.getElementById('download-from-preview').addEventListener('click', () => this.downloadPDFFromPreview());
-                document.getElementById('close-pdf-preview').addEventListener('click', () => this.hideModal('pdf-preview-modal'));
+                this.addEventListenerSafe('download-from-preview', 'click', () => this.downloadPDFFromPreview());
+                this.addEventListenerSafe('close-pdf-preview', 'click', () => this.hideModal('pdf-preview-modal'));
             }
 
             // 模态框管理
@@ -615,12 +624,18 @@
 
             updateFontModalSettings() {
                 // 同步字体选择器的值到模态框
-                document.getElementById('font-style').value = this.fontSettings.family;
-                if (document.getElementById('trace-opacity-select')) {
-                    document.getElementById('trace-opacity-select').value = this.fontSettings.traceOpacity;
+                const fontStyleEl = document.getElementById('font-style');
+                const traceOpacityEl = document.getElementById('trace-opacity-select');
+                const lineStyleEl = document.getElementById('line-style-select');
+                
+                if (fontStyleEl) {
+                    fontStyleEl.value = this.fontSettings.family;
                 }
-                if (document.getElementById('line-style-select')) {
-                    document.getElementById('line-style-select').value = this.fontSettings.lineStyle;
+                if (traceOpacityEl) {
+                    traceOpacityEl.value = this.fontSettings.traceOpacity;
+                }
+                if (lineStyleEl) {
+                    lineStyleEl.value = this.fontSettings.lineStyle;
                 }
             }
 
@@ -680,14 +695,40 @@
             }
 
             applyFontSettings() {
-                this.fontSettings.family = document.getElementById('font-style').value;
+                const fontStyleEl = document.getElementById('font-style');
+                const traceOpacityEl = document.getElementById('trace-opacity-select');
+                const lineStyleEl = document.getElementById('line-style-select');
                 
-                // 同步到主页面的字体选择器
-                document.getElementById('font-style').value = this.fontSettings.family;
+                if (fontStyleEl) {
+                    this.fontSettings.family = fontStyleEl.value;
+                    // 同步到主页面的字体选择器
+                    fontStyleEl.value = this.fontSettings.family;
+                }
+                
+                if (traceOpacityEl) {
+                    this.fontSettings.traceOpacity = parseInt(traceOpacityEl.value);
+                }
+                
+                if (lineStyleEl) {
+                    this.fontSettings.lineStyle = lineStyleEl.value;
+                }
                 
                 this.saveSettings();
                 this.hideModal('font-modal');
-                alert('字体设置已应用');
+                alert('字体和练习设置已应用');
+            }
+
+            updateTraceSettings() {
+                // 实时更新描红设置
+                const traceOpacityEl = document.getElementById('trace-opacity-select');
+                const lineStyleEl = document.getElementById('line-style-select');
+                
+                if (traceOpacityEl) {
+                    this.fontSettings.traceOpacity = parseInt(traceOpacityEl.value);
+                }
+                if (lineStyleEl) {
+                    this.fontSettings.lineStyle = lineStyleEl.value;
+                }
             }
 
             // 打印管理功能
