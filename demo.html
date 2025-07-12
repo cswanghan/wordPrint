@@ -909,20 +909,23 @@
                         }
                     }
 
-                    // 标准英文四线格设计 - 基于字体自然比例
-                    // jsPDF中字体的自然baseline定位，我们围绕这个调整线条位置
-                    const fontBaseline = y + lineSpacing * 0.7; // 字体基线位置
+                    // 标准英文四线格设计 - 正确比例
+                    // 标准比例：第1-2线间距 = 第2-3线间距 > 第3-4线间距
+                    const baseUnit = fontSize * 0.6;  // 基础单位距离
                     
-                    // 根据字体大小计算四线格间距
-                    const ascenderSpace = fontSize * 0.7;     // 上伸空间（b,d,h等上部）
-                    const xHeightSpace = fontSize * 0.5;      // x-height空间（a,c,e等主体）
-                    const descenderSpace = fontSize * 0.4;    // 下伸空间（g,j,p等下部）
+                    // 计算基线位置（第3线）- 整个格子的中心偏下一点
+                    const baseLineY = y + lineSpacing * 0.6;
                     
                     // 四线格位置（从上到下）
-                    const topLineY = fontBaseline - ascenderSpace;           // 顶线
-                    const waistLineY = fontBaseline - xHeightSpace;          // 腰线
-                    const baseLineY = fontBaseline;                          // 基线（字体自然基线）
-                    const descenderLineY = fontBaseline + descenderSpace;    // 底线
+                    const topLineY = baseLineY - baseUnit * 2;        // 第1线（顶线）
+                    const waistLineY = baseLineY - baseUnit;          // 第2线（腰线）
+                    // baseLineY 已定义                               // 第3线（基线）
+                    const descenderLineY = baseLineY + baseUnit * 0.7; // 第4线（底线）
+                    
+                    // 验证间距：
+                    // 第1-2线间距 = baseUnit (fontSize * 0.6)
+                    // 第2-3线间距 = baseUnit (fontSize * 0.6) 
+                    // 第3-4线间距 = baseUnit * 0.7 (fontSize * 0.42)
 
                     // 根据线条样式设置绘制线条
                     doc.setDrawColor(220, 220, 220);
