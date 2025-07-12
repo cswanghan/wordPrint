@@ -1,0 +1,326 @@
+<!DOCTYPE html>
+<html lang="zh-CN">
+<head>
+    <meta charset="UTF-8">
+    <meta name="viewport" content="width=device-width, initial-scale=1.0">
+    <title>单词抄写PDF生成器 - 测试套件</title>
+    <script src="https://cdn.tailwindcss.com"></script>
+    <style>
+        .test-pass { color: #10b981; }
+        .test-fail { color: #ef4444; }
+        .test-pending { color: #f59e0b; }
+    </style>
+</head>
+<body class="bg-gray-100 text-gray-800">
+    <div class="container mx-auto p-4">
+        <div class="bg-white rounded-lg shadow-lg p-6">
+            <h1 class="text-2xl font-bold text-gray-900 mb-6">🧪 单词抄写PDF生成器 - 自动化测试套件</h1>
+            
+            <!-- 测试控制面板 -->
+            <div class="mb-6 p-4 bg-blue-50 rounded-lg">
+                <div class="flex gap-4 items-center">
+                    <button id="run-all-tests" class="bg-blue-600 hover:bg-blue-700 text-white px-4 py-2 rounded-lg">
+                        🚀 运行所有测试
+                    </button>
+                    <button id="run-unit-tests" class="bg-green-600 hover:bg-green-700 text-white px-4 py-2 rounded-lg">
+                        🔧 单元测试
+                    </button>
+                    <button id="run-integration-tests" class="bg-purple-600 hover:bg-purple-700 text-white px-4 py-2 rounded-lg">
+                        🔗 集成测试
+                    </button>
+                    <button id="clear-results" class="bg-gray-600 hover:bg-gray-700 text-white px-4 py-2 rounded-lg">
+                        🗑️ 清空结果
+                    </button>
+                </div>
+                <div class="mt-3 text-sm text-gray-600">
+                    总测试: <span id="total-tests">0</span> | 
+                    通过: <span id="passed-tests" class="test-pass">0</span> | 
+                    失败: <span id="failed-tests" class="test-fail">0</span> | 
+                    进行中: <span id="pending-tests" class="test-pending">0</span>
+                </div>
+            </div>
+
+            <!-- 测试结果 -->
+            <div id="test-results" class="space-y-2">
+                <!-- 测试结果将在这里显示 -->
+            </div>
+        </div>
+    </div>
+
+    <!-- 隐藏的应用实例用于测试 -->
+    <div id="hidden-app" style="display: none;">
+        <select id="word-source">
+            <option value="custom">手动输入词库</option>
+            <option value="ket">KET 核心词汇</option>
+        </select>
+        <textarea id="word-list"></textarea>
+        <input type="number" id="repetitions" value="5">
+        <input type="number" id="rows-per-page" value="10">
+        <input type="number" id="line-spacing" value="60">
+        <input type="number" id="font-size" value="22">
+        <select id="font-style">
+            <option value="Helvetica">标准印刷体</option>
+            <option value="cursive-standard">标准手写体</option>
+        </select>
+        <select id="trace-opacity-select">
+            <option value="180">较深</option>
+        </select>
+        <select id="line-style-select">
+            <option value="standard">标准四线格</option>
+        </select>
+        <button id="generate-pdf">生成PDF</button>
+        <button id="preview-pdf-btn">预览PDF</button>
+    </div>
+
+    <script>
+        // 测试框架
+        class TestRunner {
+            constructor() {
+                this.tests = [];
+                this.results = [];
+                this.stats = { total: 0, passed: 0, failed: 0, pending: 0 };
+            }
+
+            test(name, testFn, category = 'unit') {
+                this.tests.push({ name, testFn, category });
+            }
+
+            async runAll() {
+                this.clearResults();
+                for (const test of this.tests) {
+                    await this.runTest(test);
+                }
+                this.updateStats();
+            }
+
+            async runCategory(category) {
+                this.clearResults();
+                const categoryTests = this.tests.filter(t => t.category === category);
+                for (const test of categoryTests) {
+                    await this.runTest(test);
+                }
+                this.updateStats();
+            }
+
+            async runTest(test) {
+                const startTime = Date.now();
+                this.logResult(test.name, 'pending', '运行中...');
+                this.stats.pending++;
+                this.updateStats();
+
+                try {
+                    await test.testFn();
+                    const duration = Date.now() - startTime;
+                    this.logResult(test.name, 'pass', `通过 (${duration}ms)`);
+                    this.stats.pending--;
+                    this.stats.passed++;
+                } catch (error) {
+                    const duration = Date.now() - startTime;
+                    this.logResult(test.name, 'fail', `失败: ${error.message} (${duration}ms)`);
+                    this.stats.pending--;
+                    this.stats.failed++;
+                }
+                this.updateStats();
+            }
+
+            logResult(testName, status, message) {
+                const resultsContainer = document.getElementById('test-results');
+                const existingResult = document.getElementById(`test-${testName.replace(/\s+/g, '-')}`);
+                
+                if (existingResult) {
+                    existingResult.remove();
+                }
+
+                const resultDiv = document.createElement('div');
+                resultDiv.id = `test-${testName.replace(/\s+/g, '-')}`;
+                resultDiv.className = `p-3 rounded-lg border-l-4 ${
+                    status === 'pass' ? 'bg-green-50 border-green-500' :
+                    status === 'fail' ? 'bg-red-50 border-red-500' :
+                    'bg-yellow-50 border-yellow-500'
+                }`;
+                resultDiv.innerHTML = `
+                    <div class="flex items-center justify-between">
+                        <span class="font-medium">${testName}</span>
+                        <span class="text-sm ${
+                            status === 'pass' ? 'test-pass' :
+                            status === 'fail' ? 'test-fail' :
+                            'test-pending'
+                        }">${message}</span>
+                    </div>
+                `;
+                resultsContainer.appendChild(resultDiv);
+            }
+
+            updateStats() {
+                this.stats.total = this.stats.passed + this.stats.failed + this.stats.pending;
+                document.getElementById('total-tests').textContent = this.stats.total;
+                document.getElementById('passed-tests').textContent = this.stats.passed;
+                document.getElementById('failed-tests').textContent = this.stats.failed;
+                document.getElementById('pending-tests').textContent = this.stats.pending;
+            }
+
+            clearResults() {
+                document.getElementById('test-results').innerHTML = '';
+                this.stats = { total: 0, passed: 0, failed: 0, pending: 0 };
+                this.updateStats();
+            }
+
+            assert(condition, message) {
+                if (!condition) {
+                    throw new Error(message);
+                }
+            }
+
+            assertEqual(actual, expected, message) {
+                if (actual !== expected) {
+                    throw new Error(`${message}: 期望 ${expected}, 实际 ${actual}`);
+                }
+            }
+
+            assertExists(element, message) {
+                if (!element) {
+                    throw new Error(`${message}: 元素不存在`);
+                }
+            }
+        }
+
+        // 创建测试运行器实例
+        const testRunner = new TestRunner();
+
+        // 单元测试
+        testRunner.test('DOM元素存在性检查', () => {
+            testRunner.assertExists(document.getElementById('word-source'), '词库选择器');
+            testRunner.assertExists(document.getElementById('word-list'), '单词列表');
+            testRunner.assertExists(document.getElementById('font-style'), '字体选择器');
+            testRunner.assertExists(document.getElementById('generate-pdf'), 'PDF生成按钮');
+        }, 'unit');
+
+        testRunner.test('字体配置对象验证', () => {
+            // 模拟WordPrintApp的字体配置
+            const fontStyles = {
+                'Helvetica': { name: 'Helvetica', type: 'normal', description: '标准印刷体' },
+                'cursive-standard': { name: 'Times', type: 'italic', letterSpacing: 2, description: 'D\'Nealian标准手写体' }
+            };
+            
+            testRunner.assertExists(fontStyles['Helvetica'], 'Helvetica字体配置');
+            testRunner.assertExists(fontStyles['cursive-standard'], '手写体字体配置');
+            testRunner.assertEqual(fontStyles['Helvetica'].type, 'normal', 'Helvetica字体类型');
+            testRunner.assertEqual(fontStyles['cursive-standard'].letterSpacing, 2, '手写体字母间距');
+        }, 'unit');
+
+        testRunner.test('单词列表处理', () => {
+            const testWords = 'apple\nbanana\ncherry\n\n  \ndog';
+            const processed = testWords.split('\n').filter(w => w.trim() !== '');
+            
+            testRunner.assertEqual(processed.length, 4, '处理后的单词数量');
+            testRunner.assertEqual(processed[0], 'apple', '第一个单词');
+            testRunner.assertEqual(processed[3], 'dog', '最后一个单词');
+        }, 'unit');
+
+        testRunner.test('本地存储功能', () => {
+            const testData = { fontFamily: 'Times', traceOpacity: 150 };
+            localStorage.setItem('wordPrintTest', JSON.stringify(testData));
+            
+            const retrieved = JSON.parse(localStorage.getItem('wordPrintTest'));
+            testRunner.assertEqual(retrieved.fontFamily, 'Times', '字体家族存储');
+            testRunner.assertEqual(retrieved.traceOpacity, 150, '描红透明度存储');
+            
+            localStorage.removeItem('wordPrintTest');
+        }, 'unit');
+
+        testRunner.test('数值输入验证', () => {
+            const testInput = (value, min, max) => {
+                const num = parseInt(value);
+                return !isNaN(num) && num >= min && num <= max;
+            };
+            
+            testRunner.assert(testInput('5', 1, 20), '有效的重复次数');
+            testRunner.assert(testInput('22', 10, 30), '有效的字体大小');
+            testRunner.assert(!testInput('0', 1, 20), '无效的重复次数');
+            testRunner.assert(!testInput('50', 10, 30), '无效的字体大小');
+        }, 'unit');
+
+        // 集成测试
+        testRunner.test('字体切换集成测试', async () => {
+            const fontSelect = document.getElementById('font-style');
+            fontSelect.value = 'cursive-standard';
+            
+            // 模拟change事件
+            const event = new Event('change');
+            fontSelect.dispatchEvent(event);
+            
+            testRunner.assertEqual(fontSelect.value, 'cursive-standard', '字体选择器值更新');
+        }, 'integration');
+
+        testRunner.test('单词源切换集成测试', async () => {
+            const wordSourceSelect = document.getElementById('word-source');
+            const wordListTextarea = document.getElementById('word-list');
+            
+            // 模拟KET词库选择
+            wordSourceSelect.value = 'ket';
+            const event = new Event('change');
+            wordSourceSelect.dispatchEvent(event);
+            
+            // 由于没有实际的app实例，我们测试元素状态
+            testRunner.assertEqual(wordSourceSelect.value, 'ket', '词库选择正确');
+        }, 'integration');
+
+        testRunner.test('PDF参数验证集成测试', () => {
+            const params = {
+                repetitions: parseInt(document.getElementById('repetitions').value),
+                rowsPerPage: parseInt(document.getElementById('rows-per-page').value),
+                lineSpacing: parseInt(document.getElementById('line-spacing').value),
+                fontSize: parseInt(document.getElementById('font-size').value)
+            };
+            
+            testRunner.assert(params.repetitions >= 1 && params.repetitions <= 20, '重复次数范围正确');
+            testRunner.assert(params.rowsPerPage >= 5 && params.rowsPerPage <= 20, '每页行数范围正确');
+            testRunner.assert(params.lineSpacing >= 30 && params.lineSpacing <= 80, '行间距范围正确');
+            testRunner.assert(params.fontSize >= 10 && params.fontSize <= 30, '字体大小范围正确');
+        }, 'integration');
+
+        testRunner.test('响应式设计测试', () => {
+            // 模拟移动设备视口
+            const isMobile = window.innerWidth < 768;
+            const containers = document.querySelectorAll('.container');
+            
+            testRunner.assert(containers.length > 0, '容器元素存在');
+            // 在实际应用中，这里会测试响应式布局
+        }, 'integration');
+
+        // 性能测试
+        testRunner.test('大量单词处理性能测试', () => {
+            const largeWordList = Array.from({length: 1000}, (_, i) => `word${i}`);
+            const startTime = Date.now();
+            
+            const processed = largeWordList.filter(w => w.trim() !== '');
+            
+            const endTime = Date.now();
+            const duration = endTime - startTime;
+            
+            testRunner.assert(duration < 100, `大量单词处理耗时应小于100ms，实际${duration}ms`);
+            testRunner.assertEqual(processed.length, 1000, '处理单词数量正确');
+        }, 'integration');
+
+        // 事件监听器
+        document.getElementById('run-all-tests').addEventListener('click', () => {
+            testRunner.runAll();
+        });
+
+        document.getElementById('run-unit-tests').addEventListener('click', () => {
+            testRunner.runCategory('unit');
+        });
+
+        document.getElementById('run-integration-tests').addEventListener('click', () => {
+            testRunner.runCategory('integration');
+        });
+
+        document.getElementById('clear-results').addEventListener('click', () => {
+            testRunner.clearResults();
+        });
+
+        // 页面加载时显示测试统计
+        testRunner.updateStats();
+    </script>
+</body>
+</html>

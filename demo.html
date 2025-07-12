@@ -853,17 +853,16 @@
                 const fontConfig = this.fontStyles[currentFont] || this.fontStyles['Helvetica'];
                 
                 // 设置字体
-                doc.setFont(fontConfig.name);
                 if (fontConfig.type === 'italic') {
-                    doc.setFontType('italic');
+                    doc.setFont(fontConfig.name, 'italic');
                 } else if (fontConfig.type === 'bold') {
-                    doc.setFontType('bold');
+                    doc.setFont(fontConfig.name, 'bold');
                 } else if (fontConfig.type === 'bolditalic') {
-                    doc.setFontType('bolditalic');
+                    doc.setFont(fontConfig.name, 'bolditalic');
                 } else if (fontConfig.type === 'oblique') {
-                    doc.setFontType('italic'); // jsPDF不支持oblique，用italic代替
+                    doc.setFont(fontConfig.name, 'italic'); // jsPDF不支持oblique，用italic代替
                 } else {
-                    doc.setFontType('normal');
+                    doc.setFont(fontConfig.name, 'normal');
                 }
 
                 const pageHeight = doc.internal.pageSize.getHeight();
@@ -890,15 +889,14 @@
                         
                         doc.addPage();
                         // 重新设置字体
-                        doc.setFont(fontConfig.name);
                         if (fontConfig.type === 'italic') {
-                            doc.setFontType('italic');
+                            doc.setFont(fontConfig.name, 'italic');
                         } else if (fontConfig.type === 'bold') {
-                            doc.setFontType('bold');
+                            doc.setFont(fontConfig.name, 'bold');
                         } else if (fontConfig.type === 'bolditalic') {
-                            doc.setFontType('bolditalic');
+                            doc.setFont(fontConfig.name, 'bolditalic');
                         } else {
-                            doc.setFontType('normal');
+                            doc.setFont(fontConfig.name, 'normal');
                         }
                         pageNumber++;
                         y = margins.top;
@@ -919,17 +917,29 @@
                     const waistLineY = baseLineY - mainGridHeight * 0.5;
                     const descenderLineY = baseLineY + descenderHeight;
 
+                    // 根据线条样式设置绘制线条
                     doc.setDrawColor(220, 220, 220);
                     doc.setLineWidth(0.7);
 
-                    // 绘制线条
-                    doc.line(margins.left, topLineY, pageWidth - margins.right, topLineY);
-                    doc.line(margins.left, descenderLineY, pageWidth - margins.right, descenderLineY);
-                    
-                    doc.setLineDashPattern([2, 2], 0);
-                    doc.line(margins.left, waistLineY, pageWidth - margins.right, waistLineY);
-                    doc.line(margins.left, baseLineY, pageWidth - margins.right, baseLineY);
-                    doc.setLineDashPattern([], 0);
+                    if (this.fontSettings.lineStyle === 'standard') {
+                        // 标准四线格
+                        doc.line(margins.left, topLineY, pageWidth - margins.right, topLineY);
+                        doc.line(margins.left, descenderLineY, pageWidth - margins.right, descenderLineY);
+                        doc.setLineDashPattern([2, 2], 0);
+                        doc.line(margins.left, waistLineY, pageWidth - margins.right, waistLineY);
+                        doc.line(margins.left, baseLineY, pageWidth - margins.right, baseLineY);
+                        doc.setLineDashPattern([], 0);
+                    } else if (this.fontSettings.lineStyle === 'simple') {
+                        // 简单基线
+                        doc.line(margins.left, baseLineY, pageWidth - margins.right, baseLineY);
+                    } else if (this.fontSettings.lineStyle === 'dotted') {
+                        // 虚线引导
+                        doc.setLineDashPattern([3, 3], 0);
+                        doc.line(margins.left, topLineY, pageWidth - margins.right, topLineY);
+                        doc.line(margins.left, baseLineY, pageWidth - margins.right, baseLineY);
+                        doc.line(margins.left, descenderLineY, pageWidth - margins.right, descenderLineY);
+                        doc.setLineDashPattern([], 0);
+                    }
 
                     const wordY = baseLineY;
                     const columnWidth = (pageWidth - margins.left - margins.right) / (repetitions + 1.5);
