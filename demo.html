@@ -652,11 +652,12 @@
                         ${fontFamily.startsWith('cursive') ? 
                             '<span class="text-xs text-gray-600">💡 提示：手写体会自动添加字母间距，配合标准四线格使用效果最佳</span>' : 
                             '<span class="text-xs text-gray-600">💡 提示：印刷体适合初学者，字母大小已调整以适配四线格标准</span>'}
-                        <br><span class="text-xs text-blue-600">📏 标准四线格：四条等间距线条创建三个相等空间<br>
-                        • 小写字母主体(a,c,e,m,n,o等)：腰线到基线之间<br>
-                        • 上伸字母(b,d,f,h,k,l,t)：从基线延伸到头线<br>  
-                        • 下伸字母(g,j,p,q,y)：从基线延伸到下伸线<br>
-                        • 大写字母：从基线到头线（占上面两个空间）</span>
+                        <br><span class="text-xs text-blue-600">📏 标准英文四线格教学系统：<br>
+                        • Sky Line（天空线）- 高字母(b,d,f,h,k,l,t)的顶部边界<br>
+                        • Dotted Line（虚线）- 小写字母(a,c,e,m,n,o等)的顶部<br>
+                        • Grass Line（草线/基线）- 所有字母都"坐"在这条线上<br>  
+                        • Worm Line（蚯蚓线）- 下伸字母(g,j,p,q,y)的底部边界<br>
+                        • 大写字母：从草线到天空线</span>
                     `;
                 }
                 
@@ -913,67 +914,71 @@
                         }
                     }
 
-                    // 标准英文四线格设计 - 等间距四线格
-                    // 原则：四条线的间距完全相等，共创建三个相等的空间
-                    const lineSpacing_uniform = fontSize * 0.8;  // 统一的线间距
+                    // 标准英文四线格设计 - 基于教学标准
+                    // 基于搜索结果：Top Line, Dotted Middle Line, Baseline, Descender Line
                     
-                    // 计算中心位置，然后均匀分布四条线
-                    const centerY = y + lineSpacing * 0.5;
+                    // 字母高度比例（基于教学标准）
+                    const smallLetterHeight = fontSize * 0.6;      // 小写字母主体高度(a,c,e等)
+                    const tallLetterHeight = fontSize * 1.2;       // 高字母总高度(b,d,f等) 
+                    const descenderHeight = fontSize * 0.4;        // 下伸部分高度(g,j,p等)
                     
-                    // 四线格位置（从上到下，等间距）
-                    const topLineY = centerY - lineSpacing_uniform * 1.5;        // 第1线（顶线）
-                    const midTopLineY = centerY - lineSpacing_uniform * 0.5;     // 第2线（上中线）
-                    const midBottomLineY = centerY + lineSpacing_uniform * 0.5;  // 第3线（下中线，基线）
-                    const bottomLineY = centerY + lineSpacing_uniform * 1.5;     // 第4线（底线）
+                    // 计算基线位置（所有字母都"坐"在这条线上）
+                    const baseLineY = y + lineSpacing * 0.6;
                     
-                    // 重新命名以符合英文手写习惯
-                    const headLineY = topLineY;        // 头线（大写字母顶部）
-                    const waistLineY = midTopLineY;    // 腰线（小写字母顶部）
-                    const baseLineY = midBottomLineY;  // 基线（所有字母基础线）
-                    const descenderLineY = bottomLineY; // 下伸线（下伸部分底部）
+                    // 四线格位置（从上到下）
+                    const topLineY = baseLineY - tallLetterHeight;              // 顶线（高字母顶部）
+                    const middleLineY = baseLineY - smallLetterHeight;          // 中线（小写字母顶部）
+                    // baseLineY 已定义                                       // 基线（所有字母基础）
+                    const descenderLineY = baseLineY + descenderHeight;        // 下伸线（下伸字母底部）
+                    
+                    // 重新命名以符合标准术语
+                    const skyLineY = topLineY;          // Sky Line - 高字母顶部边界
+                    const dottedLineY = middleLineY;    // Dotted Middle Line - 小写字母顶部
+                    const grassLineY = baseLineY;       // Baseline (Grass Line) - 字母基础线
+                    const wormLineY = descenderLineY;   // Descender Line - 下伸字母底部
 
                     // 根据线条样式设置绘制线条
                     doc.setDrawColor(220, 220, 220);
                     doc.setLineWidth(0.7);
 
                     if (this.fontSettings.lineStyle === 'standard') {
-                        // 标准英文四线格 - 等间距四线
-                        // 头线和下伸线（实线，较细）
+                        // 标准英文四线格 - 基于教学标准
+                        // Sky Line 和 Worm Line（实线，较细）
                         doc.setLineWidth(0.5);
                         doc.setDrawColor(200, 200, 200);
-                        doc.line(margins.left, headLineY, pageWidth - margins.right, headLineY);
-                        doc.line(margins.left, descenderLineY, pageWidth - margins.right, descenderLineY);
+                        doc.line(margins.left, skyLineY, pageWidth - margins.right, skyLineY);
+                        doc.line(margins.left, wormLineY, pageWidth - margins.right, wormLineY);
                         
-                        // 腰线（虚线，小写字母顶部引导线）
-                        doc.setLineDashPattern([3, 2], 0);
-                        doc.setDrawColor(180, 180, 180);
-                        doc.line(margins.left, waistLineY, pageWidth - margins.right, waistLineY);
+                        // Dotted Middle Line（虚线，小写字母顶部引导）
+                        doc.setLineDashPattern([2, 3], 0);
+                        doc.setDrawColor(160, 160, 160);
+                        doc.line(margins.left, dottedLineY, pageWidth - margins.right, dottedLineY);
                         
-                        // 基线（实线，最粗，最重要的书写基准线）
+                        // Baseline/Grass Line（实线，最粗，最重要的书写基准线）
                         doc.setLineDashPattern([], 0);
                         doc.setLineWidth(1.0);
-                        doc.setDrawColor(120, 120, 120);
-                        doc.line(margins.left, baseLineY, pageWidth - margins.right, baseLineY);
+                        doc.setDrawColor(100, 100, 100);
+                        doc.line(margins.left, grassLineY, pageWidth - margins.right, grassLineY);
                         
                     } else if (this.fontSettings.lineStyle === 'simple') {
                         // 简单基线模式（只有基线）
                         doc.setLineWidth(0.8);
                         doc.setDrawColor(150, 150, 150);
-                        doc.line(margins.left, baseLineY, pageWidth - margins.right, baseLineY);
+                        doc.line(margins.left, grassLineY, pageWidth - margins.right, grassLineY);
                         
                     } else if (this.fontSettings.lineStyle === 'dotted') {
-                        // 虚线引导模式（四条等间距虚线）
+                        // 虚线引导模式（四条线都是虚线）
                         doc.setLineDashPattern([3, 2], 0);
                         doc.setLineWidth(0.6);
                         doc.setDrawColor(180, 180, 180);
-                        doc.line(margins.left, headLineY, pageWidth - margins.right, headLineY);
-                        doc.line(margins.left, waistLineY, pageWidth - margins.right, waistLineY);
-                        doc.line(margins.left, baseLineY, pageWidth - margins.right, baseLineY);
-                        doc.line(margins.left, descenderLineY, pageWidth - margins.right, descenderLineY);
+                        doc.line(margins.left, skyLineY, pageWidth - margins.right, skyLineY);
+                        doc.line(margins.left, dottedLineY, pageWidth - margins.right, dottedLineY);
+                        doc.line(margins.left, grassLineY, pageWidth - margins.right, grassLineY);
+                        doc.line(margins.left, wormLineY, pageWidth - margins.right, wormLineY);
                         doc.setLineDashPattern([], 0);
                     }
 
-                    const wordY = baseLineY;
+                    const wordY = grassLineY;  // 字母应该"坐"在基线（草线）上
                     const columnWidth = (pageWidth - margins.left - margins.right) / (repetitions + 1.5);
 
                     // 绘制原始单词（黑色）
