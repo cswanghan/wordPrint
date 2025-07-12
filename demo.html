@@ -97,11 +97,13 @@
                                 <label for="font-style" class="block text-sm font-medium text-gray-700">字体样式</label>
                                 <div class="flex gap-2">
                                     <select id="font-style" class="flex-1 mt-1 bg-gray-50 border border-gray-300 text-gray-900 text-sm rounded-lg focus:ring-blue-500 focus:border-blue-500 block p-2.5">
-                                        <option value="Helvetica">标准无衬线体 (Helvetica)</option>
-                                        <option value="Courier">打字机体 (Courier)</option>
-                                        <option value="Times-Roman">时代衬线体 (Times New Roman)</option>
-                                        <option value="ZapfDingbats">装饰符号体 (ZapfDingbats)</option>
-                                        <option value="Symbol">符号体 (Symbol)</option>
+                                        <option value="Helvetica">标准印刷体 (Print Style)</option>
+                                        <option value="Times-Roman">衬线印刷体 (Serif Print)</option>
+                                        <option value="Courier">等宽练习体 (Monospace)</option>
+                                        <option value="cursive-standard">标准手写体 (D'Nealian)</option>
+                                        <option value="cursive-italic">斜体手写体 (Italic Script)</option>
+                                        <option value="cursive-zaner">赞纳-布洛泽体 (Zaner-Bloser)</option>
+                                        <option value="cursive-palmer">帕尔默体 (Palmer Method)</option>
                                     </select>
                                     <button id="preview-font-btn" class="mt-1 bg-blue-600 hover:bg-blue-700 text-white px-3 py-2 rounded-lg text-sm font-medium">
                                         👁️
@@ -190,24 +192,29 @@
                         <label class="block text-sm font-medium text-gray-700 mb-2">字体预览</label>
                         <div class="border border-gray-300 rounded-lg p-4 bg-gray-50">
                             <p id="font-preview-text" class="text-2xl" style="font-family: Helvetica;">The quick brown fox jumps over the lazy dog</p>
-                            <p id="font-preview-chinese" class="text-lg mt-2 text-gray-600">字体预览 - 这是示例文本</p>
+                            <p id="font-preview-numbers" class="text-xl mt-2 text-gray-700">0123456789 ABCDEFGHIJKLMNOPQRSTUVWXYZ</p>
+                            <p id="font-preview-lowercase" class="text-xl mt-1 text-gray-700">abcdefghijklmnopqrstuvwxyz</p>
+                            <p id="font-preview-chinese" class="text-lg mt-2 text-gray-600">字体预览 - 适合英文手写练习</p>
                         </div>
                     </div>
                     <div>
-                        <label class="block text-sm font-medium text-gray-700 mb-2">字体设置</label>
+                        <label class="block text-sm font-medium text-gray-700 mb-2">练习设置</label>
                         <div class="grid grid-cols-2 gap-4">
                             <div>
-                                <label class="block text-xs text-gray-600">字体粗细</label>
-                                <select id="font-weight-select" class="w-full p-2 border border-gray-300 rounded-lg">
-                                    <option value="normal">正常</option>
-                                    <option value="bold">粗体</option>
+                                <label class="block text-xs text-gray-600">描红颜色深度</label>
+                                <select id="trace-opacity-select" class="w-full p-2 border border-gray-300 rounded-lg">
+                                    <option value="100">很浅 (练习模式)</option>
+                                    <option value="150">标准</option>
+                                    <option value="180" selected>较深</option>
+                                    <option value="220">很深 (演示模式)</option>
                                 </select>
                             </div>
                             <div>
-                                <label class="block text-xs text-gray-600">字体样式</label>
-                                <select id="font-style-select" class="w-full p-2 border border-gray-300 rounded-lg">
-                                    <option value="normal">正常</option>
-                                    <option value="italic">斜体</option>
+                                <label class="block text-xs text-gray-600">线条样式</label>
+                                <select id="line-style-select" class="w-full p-2 border border-gray-300 rounded-lg">
+                                    <option value="standard" selected>标准四线格</option>
+                                    <option value="simple">简单基线</option>
+                                    <option value="dotted">虚线引导</option>
                                 </select>
                             </div>
                         </div>
@@ -215,6 +222,12 @@
                     <div>
                         <label class="block text-sm font-medium text-gray-700 mb-2">自定义预览文本</label>
                         <input type="text" id="custom-preview-text" placeholder="输入要预览的文本..." class="w-full p-2 border border-gray-300 rounded-lg">
+                    </div>
+                    <div>
+                        <label class="block text-sm font-medium text-gray-700 mb-2">字体说明</label>
+                        <div id="font-description" class="p-3 bg-blue-50 rounded-lg text-sm text-gray-700">
+                            选择一个字体查看说明...
+                        </div>
                     </div>
                 </div>
             </div>
@@ -316,6 +329,49 @@
         // 应用状态管理
         class WordPrintApp {
             constructor() {
+                // 手写字体映射和样式配置
+                this.fontStyles = {
+                    'Helvetica': { 
+                        name: 'Helvetica', 
+                        type: 'normal',
+                        description: '标准印刷体，适合初学者'
+                    },
+                    'Times-Roman': { 
+                        name: 'Times', 
+                        type: 'normal',
+                        description: '传统衬线体，易于阅读'
+                    },
+                    'Courier': { 
+                        name: 'Courier', 
+                        type: 'normal',
+                        description: '等宽字体，每个字母占相同空间'
+                    },
+                    'cursive-standard': { 
+                        name: 'Times', 
+                        type: 'italic',
+                        letterSpacing: 2,
+                        description: 'D\'Nealian标准手写体'
+                    },
+                    'cursive-italic': { 
+                        name: 'Helvetica', 
+                        type: 'oblique',
+                        letterSpacing: 3,
+                        description: '斜体手写风格'
+                    },
+                    'cursive-zaner': { 
+                        name: 'Times', 
+                        type: 'bolditalic',
+                        letterSpacing: 2,
+                        description: 'Zaner-Bloser美式手写体'
+                    },
+                    'cursive-palmer': { 
+                        name: 'Courier', 
+                        type: 'italic',
+                        letterSpacing: 1,
+                        description: 'Palmer方法手写体'
+                    }
+                };
+                
                 this.wordBanks = {
                     ket: ["ability", "able", "about", "above", "abroad", "accept", "accident", "achieve", "act", "action", "active", "activity", "actor", "actress", "actually", "add", "address", "adventure", "advertise", "advice", "advise", "aeroplane", "afford", "afraid", "after", "afternoon", "again", "against", "age", "ago", "agree"],
                     toefl: ["abandon", "abrupt", "absorb", "abstract", "absurd", "abundant", "accelerate", "accessible", "acclaim", "accommodate", "accumulate", "accurate", "accustomed", "acquaintance", "acquire", "acute", "adequate", "adjacent", "adjust", "administer", "adolescent", "adverse", "advocate", "aesthetic", "affiliate", "affirm", "affluent"],
@@ -324,8 +380,8 @@
                 
                 this.fontSettings = {
                     family: 'Helvetica',
-                    weight: 'normal',
-                    style: 'normal'
+                    traceOpacity: 180,
+                    lineStyle: 'standard'
                 };
                 
                 this.printSettings = {
@@ -560,32 +616,71 @@
             updateFontModalSettings() {
                 // 同步字体选择器的值到模态框
                 document.getElementById('font-style').value = this.fontSettings.family;
-                document.getElementById('font-weight-select').value = this.fontSettings.weight;
-                document.getElementById('font-style-select').value = this.fontSettings.style;
+                if (document.getElementById('trace-opacity-select')) {
+                    document.getElementById('trace-opacity-select').value = this.fontSettings.traceOpacity;
+                }
+                if (document.getElementById('line-style-select')) {
+                    document.getElementById('line-style-select').value = this.fontSettings.lineStyle;
+                }
             }
 
             updateFontPreview() {
                 const fontFamily = document.getElementById('font-style').value;
-                const fontWeight = document.getElementById('font-weight-select').value;
-                const fontStyle = document.getElementById('font-style-select').value;
                 const customText = document.getElementById('custom-preview-text').value;
+                const fontConfig = this.fontStyles[fontFamily] || this.fontStyles['Helvetica'];
                 
+                // 更新字体说明
+                const descriptionEl = document.getElementById('font-description');
+                if (descriptionEl) {
+                    descriptionEl.innerHTML = `
+                        <strong>${fontConfig.description}</strong><br>
+                        ${fontFamily.startsWith('cursive') ? 
+                            '<span class="text-xs text-gray-600">💡 提示：手写体会自动添加字母间距，更接近真实手写效果</span>' : 
+                            '<span class="text-xs text-gray-600">💡 提示：印刷体适合初学者练习标准字母形状</span>'}
+                    `;
+                }
+                
+                // 应用字体到所有预览元素
                 const previewText = document.getElementById('font-preview-text');
-                previewText.style.fontFamily = fontFamily;
-                previewText.style.fontWeight = fontWeight;
-                previewText.style.fontStyle = fontStyle;
+                const previewNumbers = document.getElementById('font-preview-numbers');
+                const previewLowercase = document.getElementById('font-preview-lowercase');
+                
+                // 使用实际的PDF字体进行预览
+                const actualFont = fontConfig.name;
+                const fontStyle = fontConfig.type === 'italic' || fontConfig.type === 'bolditalic' ? 'italic' : 'normal';
+                const fontWeight = fontConfig.type === 'bold' || fontConfig.type === 'bolditalic' ? 'bold' : 'normal';
+                
+                [previewText, previewNumbers, previewLowercase].forEach(element => {
+                    if (element) {
+                        element.style.fontFamily = actualFont;
+                        element.style.fontWeight = fontWeight;
+                        element.style.fontStyle = fontStyle;
+                        // 添加字母间距效果预览
+                        if (fontConfig.letterSpacing) {
+                            element.style.letterSpacing = fontConfig.letterSpacing + 'px';
+                        } else {
+                            element.style.letterSpacing = 'normal';
+                        }
+                    }
+                });
                 
                 if (customText.trim()) {
                     previewText.textContent = customText;
+                    // 隐藏其他预览元素
+                    previewNumbers.style.display = 'none';
+                    previewLowercase.style.display = 'none';
                 } else {
                     previewText.textContent = 'The quick brown fox jumps over the lazy dog';
+                    // 显示所有预览元素
+                    previewNumbers.style.display = 'block';
+                    previewLowercase.style.display = 'block';
+                    previewNumbers.textContent = '0123456789 ABCDEFGHIJKLMNOPQRSTUVWXYZ';
+                    previewLowercase.textContent = 'abcdefghijklmnopqrstuvwxyz';
                 }
             }
 
             applyFontSettings() {
                 this.fontSettings.family = document.getElementById('font-style').value;
-                this.fontSettings.weight = document.getElementById('font-weight-select').value;
-                this.fontSettings.style = document.getElementById('font-style-select').value;
                 
                 // 同步到主页面的字体选择器
                 document.getElementById('font-style').value = this.fontSettings.family;
@@ -714,7 +809,21 @@
                 
                 // 应用字体设置 - 确保使用最新的字体选择
                 const currentFont = document.getElementById('font-style').value;
-                doc.setFont(currentFont);
+                const fontConfig = this.fontStyles[currentFont] || this.fontStyles['Helvetica'];
+                
+                // 设置字体
+                doc.setFont(fontConfig.name);
+                if (fontConfig.type === 'italic') {
+                    doc.setFontType('italic');
+                } else if (fontConfig.type === 'bold') {
+                    doc.setFontType('bold');
+                } else if (fontConfig.type === 'bolditalic') {
+                    doc.setFontType('bolditalic');
+                } else if (fontConfig.type === 'oblique') {
+                    doc.setFontType('italic'); // jsPDF不支持oblique，用italic代替
+                } else {
+                    doc.setFontType('normal');
+                }
 
                 const pageHeight = doc.internal.pageSize.getHeight();
                 const pageWidth = doc.internal.pageSize.getWidth();
@@ -739,7 +848,17 @@
                         }
                         
                         doc.addPage();
-                        doc.setFont(currentFont);
+                        // 重新设置字体
+                        doc.setFont(fontConfig.name);
+                        if (fontConfig.type === 'italic') {
+                            doc.setFontType('italic');
+                        } else if (fontConfig.type === 'bold') {
+                            doc.setFontType('bold');
+                        } else if (fontConfig.type === 'bolditalic') {
+                            doc.setFontType('bolditalic');
+                        } else {
+                            doc.setFontType('normal');
+                        }
                         pageNumber++;
                         y = margins.top;
                         
@@ -777,13 +896,35 @@
                     // 绘制原始单词（黑色）
                     doc.setTextColor(0, 0, 0);
                     doc.setFontSize(fontSize);
-                    doc.text(word, margins.left, wordY);
+                    
+                    // 应用字母间距（如果是手写体）
+                    if (fontConfig.letterSpacing) {
+                        // 手写体需要增加字母间距
+                        let xPos = margins.left;
+                        for (let char of word) {
+                            doc.text(char, xPos, wordY);
+                            xPos += doc.getTextWidth(char) + fontConfig.letterSpacing;
+                        }
+                    } else {
+                        doc.text(word, margins.left, wordY);
+                    }
 
-                    // 绘制描红单词（浅灰色）
-                    doc.setTextColor(180, 180, 180);
+                    // 绘制描红单词（使用用户设置的颜色深度）
+                    const opacity = this.fontSettings.traceOpacity || 180;
+                    doc.setTextColor(opacity, opacity, opacity);
                     for (let j = 0; j < repetitions; j++) {
                         const x = margins.left + columnWidth * (j + 1.2);
-                        doc.text(word, x, wordY);
+                        
+                        if (fontConfig.letterSpacing) {
+                            // 手写体需要增加字母间距
+                            let xPos = x;
+                            for (let char of word) {
+                                doc.text(char, xPos, wordY);
+                                xPos += doc.getTextWidth(char) + fontConfig.letterSpacing;
+                            }
+                        } else {
+                            doc.text(word, x, wordY);
+                        }
                     }
 
                     y += lineSpacing;
