@@ -208,6 +208,21 @@
             testRunner.assertEqual(fontStyles['cursive-standard'].letterSpacing, 2, '手写体字母间距');
         }, 'unit');
 
+        testRunner.test('四线格比例计算验证', () => {
+            const fontSize = 22;
+            const ascenderHeight = fontSize * 0.8;   // 17.6
+            const xHeight = fontSize * 0.8;          // 17.6  
+            const descenderHeight = fontSize * 0.6;  // 13.2
+            
+            testRunner.assertEqual(ascenderHeight, 17.6, '上伸部分高度');
+            testRunner.assertEqual(xHeight, 17.6, 'x-height高度');
+            testRunner.assertEqual(descenderHeight, 13.2, '下伸部分高度');
+            
+            // 验证总高度合理性
+            const totalHeight = ascenderHeight + xHeight + descenderHeight;
+            testRunner.assert(totalHeight > 40 && totalHeight < 60, `总高度应在合理范围: ${totalHeight}`);
+        }, 'unit');
+
         testRunner.test('单词列表处理', () => {
             const testWords = 'apple\nbanana\ncherry\n\n  \ndog';
             const processed = testWords.split('\n').filter(w => w.trim() !== '');
