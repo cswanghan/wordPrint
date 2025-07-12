@@ -1,0 +1,830 @@
+<!DOCTYPE html>
+<html lang="zh-CN">
+<head>
+    <meta charset="UTF-8">
+    <meta name="viewport" content="width=device-width, initial-scale=1.0">
+    <title>单词抄写PDF生成器 - 增强版</title>
+    <script src="https://cdn.tailwindcss.com"></script>
+    <script src="https://cdnjs.cloudflare.com/ajax/libs/jspdf/2.5.1/jspdf.umd.min.js"></script>
+    <link href="https://fonts.googleapis.com/css2?family=Inter:wght@400;500;700&display=swap" rel="stylesheet">
+    <style>
+        body {
+            font-family: 'Inter', 'Helvetica Neue', 'Arial', 'sans-serif';
+        }
+        .loader {
+            border: 5px solid #f3f3f3;
+            border-top: 5px solid #3498db;
+            border-radius: 50%;
+            width: 50px;
+            height: 50px;
+            animation: spin 1s linear infinite;
+        }
+        @keyframes spin {
+            0% { transform: rotate(0deg); }
+            100% { transform: rotate(360deg); }
+        }
+    </style>
+</head>
+<body class="bg-gray-100 text-gray-800">
+
+    <div class="container mx-auto p-4 sm:p-6 lg:p-8">
+        <div class="bg-white rounded-2xl shadow-lg p-6 md:p-8">
+            
+            <header class="mb-8 text-center">
+                <h1 class="text-3xl sm:text-4xl font-bold text-gray-900">单词抄写PDF生成器</h1>
+                <p class="mt-2 text-gray-600">轻松创建自定义的英语单词描红练习册 - 增强版</p>
+                
+                <!-- 管理功能按钮 -->
+                <div class="mt-4 flex flex-wrap justify-center gap-2">
+                    <button id="manage-wordbanks-btn" class="bg-green-100 hover:bg-green-200 text-green-800 px-4 py-2 rounded-lg text-sm font-medium transition-colors">
+                        📚 字库管理
+                    </button>
+                    <button id="manage-fonts-btn" class="bg-blue-100 hover:bg-blue-200 text-blue-800 px-4 py-2 rounded-lg text-sm font-medium transition-colors">
+                        🔤 字体管理
+                    </button>
+                    <button id="manage-print-btn" class="bg-purple-100 hover:bg-purple-200 text-purple-800 px-4 py-2 rounded-lg text-sm font-medium transition-colors">
+                        🖨️ 打印设置
+                    </button>
+                </div>
+            </header>
+
+            <div class="grid grid-cols-1 lg:grid-cols-2 gap-8">
+                
+                <!-- 左侧：设置区域 -->
+                <div class="space-y-6">
+                    <div>
+                        <label for="word-source" class="block text-sm font-medium text-gray-700 mb-2">1. 选择或输入词库</label>
+                        <div class="flex gap-2">
+                            <select id="word-source" class="flex-1 bg-gray-50 border border-gray-300 text-gray-900 text-sm rounded-lg focus:ring-blue-500 focus:border-blue-500 block p-2.5">
+                                <option value="custom">手动输入词库</option>
+                                <option value="ket">KET 核心词汇 (示例)</option>
+                                <option value="toefl">TOEFL 高频词汇 (示例)</option>
+                                <option value="gre">GRE 高频词汇 (示例)</option>
+                            </select>
+                            <button id="add-wordbank-btn" class="bg-green-600 hover:bg-green-700 text-white px-3 py-2 rounded-lg text-sm font-medium">
+                                ➕
+                            </button>
+                            <button id="delete-wordbank-btn" class="bg-red-600 hover:bg-red-700 text-white px-3 py-2 rounded-lg text-sm font-medium" disabled>
+                                🗑️
+                            </button>
+                        </div>
+                    </div>
+
+                    <div>
+                        <textarea id="word-list" rows="10" class="w-full bg-gray-50 border border-gray-300 text-gray-900 text-sm rounded-lg focus:ring-blue-500 focus:border-blue-500 block p-2.5" placeholder="请在此处输入单词，每行一个单词..."></textarea>
+                    </div>
+
+                    <div>
+                        <h3 class="text-lg font-semibold text-gray-800 mb-4">2. 设置PDF格式</h3>
+                        <div class="grid grid-cols-1 sm:grid-cols-2 gap-4">
+                            <div>
+                                <label for="repetitions" class="block text-sm font-medium text-gray-700">描红遍数</label>
+                                <input type="number" id="repetitions" value="5" min="1" max="20" class="mt-1 w-full bg-gray-50 border border-gray-300 text-gray-900 text-sm rounded-lg focus:ring-blue-500 focus:border-blue-500 block p-2.5">
+                            </div>
+                            <div>
+                                <label for="rows-per-page" class="block text-sm font-medium text-gray-700">每页行数</label>
+                                <input type="number" id="rows-per-page" value="10" min="5" max="20" class="mt-1 w-full bg-gray-50 border border-gray-300 text-gray-900 text-sm rounded-lg focus:ring-blue-500 focus:border-blue-500 block p-2.5">
+                            </div>
+                            <div>
+                                <label for="line-spacing" class="block text-sm font-medium text-gray-700">行间距 (pt)</label>
+                                <input type="number" id="line-spacing" value="60" min="30" max="80" class="mt-1 w-full bg-gray-50 border border-gray-300 text-gray-900 text-sm rounded-lg focus:ring-blue-500 focus:border-blue-500 block p-2.5">
+                            </div>
+                            <div>
+                                <label for="font-size" class="block text-sm font-medium text-gray-700">字体大小 (pt)</label>
+                                <input type="number" id="font-size" value="22" min="10" max="30" class="mt-1 w-full bg-gray-50 border border-gray-300 text-gray-900 text-sm rounded-lg focus:ring-blue-500 focus:border-blue-500 block p-2.5">
+                            </div>
+                            <div>
+                                <label for="font-style" class="block text-sm font-medium text-gray-700">字体样式</label>
+                                <div class="flex gap-2">
+                                    <select id="font-style" class="flex-1 mt-1 bg-gray-50 border border-gray-300 text-gray-900 text-sm rounded-lg focus:ring-blue-500 focus:border-blue-500 block p-2.5">
+                                        <option value="Helvetica">标准无衬线体 (Helvetica)</option>
+                                        <option value="Courier">打字机体 (Courier)</option>
+                                        <option value="Times-Roman">时代衬线体 (Times New Roman)</option>
+                                        <option value="ZapfDingbats">装饰符号体 (ZapfDingbats)</option>
+                                        <option value="Symbol">符号体 (Symbol)</option>
+                                    </select>
+                                    <button id="preview-font-btn" class="mt-1 bg-blue-600 hover:bg-blue-700 text-white px-3 py-2 rounded-lg text-sm font-medium">
+                                        👁️
+                                    </button>
+                                </div>
+                            </div>
+                        </div>
+                    </div>
+                    
+                    <div class="space-y-2">
+                        <button id="preview-pdf-btn" class="w-full bg-gray-600 hover:bg-gray-700 text-white font-bold py-2 px-4 rounded-lg focus:outline-none focus:ring-4 focus:ring-gray-300 transition-all duration-300 ease-in-out flex items-center justify-center">
+                            <svg class="w-5 h-5 mr-2" fill="none" stroke="currentColor" viewBox="0 0 24 24"><path stroke-linecap="round" stroke-linejoin="round" stroke-width="2" d="M15 12a3 3 0 11-6 0 3 3 0 016 0z"></path><path stroke-linecap="round" stroke-linejoin="round" stroke-width="2" d="M2.458 12C3.732 7.943 7.523 5 12 5c4.478 0 8.268 2.943 9.542 7-1.274 4.057-5.064 7-9.542 7-4.477 0-8.268-2.943-9.542-7z"></path></svg>
+                            预览PDF
+                        </button>
+                        <button id="generate-pdf" class="w-full bg-blue-600 hover:bg-blue-700 text-white font-bold py-3 px-4 rounded-lg focus:outline-none focus:ring-4 focus:ring-blue-300 transition-all duration-300 ease-in-out flex items-center justify-center">
+                            <svg class="w-5 h-5 mr-2" fill="none" stroke="currentColor" viewBox="0 0 24 24" xmlns="http://www.w3.org/2000/svg"><path stroke-linecap="round" stroke-linejoin="round" stroke-width="2" d="M4 16v1a3 3 0 003 3h10a3 3 0 003-3v-1m-4-4l-4 4m0 0l-4-4m4 4V4"></path></svg>
+                            生成并下载PDF
+                        </button>
+                    </div>
+                </div>
+
+                <!-- 右侧：预览和说明 -->
+                <div class="bg-gray-50 rounded-lg p-6 flex flex-col items-center justify-center text-center border-2 border-dashed border-gray-300">
+                    <div id="loading-indicator" class="hidden flex-col items-center justify-center">
+                        <div class="loader"></div>
+                        <p class="mt-4 text-gray-600">正在生成PDF，请稍候...</p>
+                    </div>
+                    <!-- 预览区域已移除 -->
+                    <div id="instructions-area">
+                        <svg class="w-24 h-24 text-gray-300 mx-auto" fill="none" stroke="currentColor" viewBox="0 0 24 24" xmlns="http://www.w3.org/2000/svg"><path stroke-linecap="round" stroke-linejoin="round" stroke-width="1" d="M9 12h6m-6 4h6m2 5H7a2 2 0 01-2-2V5a2 2 0 012-2h5.586a1 1 0 01.707.293l5.414 5.414a1 1 0 01.293.707V19a2 2 0 01-2 2z"></path></svg>
+                        <h3 class="mt-4 text-lg font-semibold text-gray-700">使用说明</h3>
+                        <ol class="text-left text-sm text-gray-600 mt-2 list-decimal list-inside space-y-1">
+                            <li>在左侧选择或输入您的单词列表。</li>
+                            <li>根据需要调整描红遍数、字体等格式。</li>
+                            <li>点击“生成并下载PDF”按钮。</li>
+                            <li>稍等片刻，浏览器将自动开始下载文件。</li>
+                        </ol>
+                         <div class="mt-4 text-xs text-gray-400 border-t pt-4 w-full">
+                            <p><strong>V6 更新</strong>: 为确保稳定性，已移除字体预览功能。</p>
+                            <p>描红颜色为浅灰色，方便打印。</p>
+                        </div>
+                    </div>
+                </div>
+            </div>
+        </div>
+        <footer class="text-center mt-6 text-sm text-gray-500">
+            <p>由 Gemini 强力驱动 - 增强版</p>
+        </footer>
+    </div>
+
+    <!-- 字库管理模态框 -->
+    <div id="wordbank-modal" class="fixed inset-0 bg-black bg-opacity-50 hidden z-50 flex items-center justify-center p-4">
+        <div class="bg-white rounded-lg max-w-2xl w-full max-h-[90vh] overflow-hidden">
+            <div class="p-6 border-b">
+                <h3 class="text-lg font-semibold text-gray-900">字库管理</h3>
+            </div>
+            <div class="p-6 overflow-y-auto max-h-[60vh]">
+                <div class="space-y-4">
+                    <div>
+                        <label class="block text-sm font-medium text-gray-700 mb-2">创建新字库</label>
+                        <input type="text" id="new-wordbank-name" placeholder="字库名称" class="w-full p-2 border border-gray-300 rounded-lg mb-2">
+                        <textarea id="new-wordbank-words" rows="4" placeholder="输入单词，每行一个..." class="w-full p-2 border border-gray-300 rounded-lg mb-2"></textarea>
+                        <button id="save-wordbank-btn" class="bg-blue-600 hover:bg-blue-700 text-white px-4 py-2 rounded-lg">保存字库</button>
+                    </div>
+                    <div>
+                        <label class="block text-sm font-medium text-gray-700 mb-2">现有字库</label>
+                        <div id="wordbank-list" class="space-y-2"></div>
+                    </div>
+                </div>
+            </div>
+            <div class="p-6 border-t flex justify-end">
+                <button id="close-wordbank-modal" class="bg-gray-500 hover:bg-gray-600 text-white px-4 py-2 rounded-lg">关闭</button>
+            </div>
+        </div>
+    </div>
+
+    <!-- 字体管理模态框 -->
+    <div id="font-modal" class="fixed inset-0 bg-black bg-opacity-50 hidden z-50 flex items-center justify-center p-4">
+        <div class="bg-white rounded-lg max-w-2xl w-full max-h-[90vh] overflow-hidden">
+            <div class="p-6 border-b">
+                <h3 class="text-lg font-semibold text-gray-900">字体管理与预览</h3>
+            </div>
+            <div class="p-6 overflow-y-auto max-h-[60vh]">
+                <div class="space-y-6">
+                    <div>
+                        <label class="block text-sm font-medium text-gray-700 mb-2">字体预览</label>
+                        <div class="border border-gray-300 rounded-lg p-4 bg-gray-50">
+                            <p id="font-preview-text" class="text-2xl" style="font-family: Helvetica;">The quick brown fox jumps over the lazy dog</p>
+                            <p id="font-preview-chinese" class="text-lg mt-2 text-gray-600">字体预览 - 这是示例文本</p>
+                        </div>
+                    </div>
+                    <div>
+                        <label class="block text-sm font-medium text-gray-700 mb-2">字体设置</label>
+                        <div class="grid grid-cols-2 gap-4">
+                            <div>
+                                <label class="block text-xs text-gray-600">字体粗细</label>
+                                <select id="font-weight-select" class="w-full p-2 border border-gray-300 rounded-lg">
+                                    <option value="normal">正常</option>
+                                    <option value="bold">粗体</option>
+                                </select>
+                            </div>
+                            <div>
+                                <label class="block text-xs text-gray-600">字体样式</label>
+                                <select id="font-style-select" class="w-full p-2 border border-gray-300 rounded-lg">
+                                    <option value="normal">正常</option>
+                                    <option value="italic">斜体</option>
+                                </select>
+                            </div>
+                        </div>
+                    </div>
+                    <div>
+                        <label class="block text-sm font-medium text-gray-700 mb-2">自定义预览文本</label>
+                        <input type="text" id="custom-preview-text" placeholder="输入要预览的文本..." class="w-full p-2 border border-gray-300 rounded-lg">
+                    </div>
+                </div>
+            </div>
+            <div class="p-6 border-t flex justify-end gap-2">
+                <button id="apply-font-settings" class="bg-blue-600 hover:bg-blue-700 text-white px-4 py-2 rounded-lg">应用设置</button>
+                <button id="close-font-modal" class="bg-gray-500 hover:bg-gray-600 text-white px-4 py-2 rounded-lg">关闭</button>
+            </div>
+        </div>
+    </div>
+
+    <!-- 打印设置模态框 -->
+    <div id="print-modal" class="fixed inset-0 bg-black bg-opacity-50 hidden z-50 flex items-center justify-center p-4">
+        <div class="bg-white rounded-lg max-w-2xl w-full max-h-[90vh] overflow-hidden">
+            <div class="p-6 border-b">
+                <h3 class="text-lg font-semibold text-gray-900">打印设置</h3>
+            </div>
+            <div class="p-6 overflow-y-auto max-h-[60vh]">
+                <div class="space-y-6">
+                    <div class="grid grid-cols-2 gap-4">
+                        <div>
+                            <label class="block text-sm font-medium text-gray-700 mb-2">纸张方向</label>
+                            <select id="page-orientation" class="w-full p-2 border border-gray-300 rounded-lg">
+                                <option value="portrait">纵向 (Portrait)</option>
+                                <option value="landscape">横向 (Landscape)</option>
+                            </select>
+                        </div>
+                        <div>
+                            <label class="block text-sm font-medium text-gray-700 mb-2">纸张尺寸</label>
+                            <select id="page-size" class="w-full p-2 border border-gray-300 rounded-lg">
+                                <option value="a4">A4 (210×297mm)</option>
+                                <option value="letter">Letter (216×279mm)</option>
+                                <option value="legal">Legal (216×356mm)</option>
+                            </select>
+                        </div>
+                    </div>
+                    <div>
+                        <label class="block text-sm font-medium text-gray-700 mb-2">页边距设置 (pt)</label>
+                        <div class="grid grid-cols-4 gap-2">
+                            <div>
+                                <label class="block text-xs text-gray-600">上边距</label>
+                                <input type="number" id="margin-top" value="40" min="10" max="100" class="w-full p-2 border border-gray-300 rounded-lg">
+                            </div>
+                            <div>
+                                <label class="block text-xs text-gray-600">右边距</label>
+                                <input type="number" id="margin-right" value="40" min="10" max="100" class="w-full p-2 border border-gray-300 rounded-lg">
+                            </div>
+                            <div>
+                                <label class="block text-xs text-gray-600">下边距</label>
+                                <input type="number" id="margin-bottom" value="40" min="10" max="100" class="w-full p-2 border border-gray-300 rounded-lg">
+                            </div>
+                            <div>
+                                <label class="block text-xs text-gray-600">左边距</label>
+                                <input type="number" id="margin-left" value="40" min="10" max="100" class="w-full p-2 border border-gray-300 rounded-lg">
+                            </div>
+                        </div>
+                    </div>
+                    <div>
+                        <label class="block text-sm font-medium text-gray-700 mb-2">高级设置</label>
+                        <div class="space-y-2">
+                            <label class="flex items-center">
+                                <input type="checkbox" id="show-page-numbers" class="mr-2">
+                                <span class="text-sm">显示页码</span>
+                            </label>
+                            <label class="flex items-center">
+                                <input type="checkbox" id="show-header" class="mr-2">
+                                <span class="text-sm">显示页眉</span>
+                            </label>
+                            <input type="text" id="header-text" placeholder="页眉内容..." class="w-full p-2 border border-gray-300 rounded-lg mt-1" disabled>
+                        </div>
+                    </div>
+                </div>
+            </div>
+            <div class="p-6 border-t flex justify-end gap-2">
+                <button id="apply-print-settings" class="bg-blue-600 hover:bg-blue-700 text-white px-4 py-2 rounded-lg">应用设置</button>
+                <button id="close-print-modal" class="bg-gray-500 hover:bg-gray-600 text-white px-4 py-2 rounded-lg">关闭</button>
+            </div>
+        </div>
+    </div>
+
+    <!-- PDF预览模态框 -->
+    <div id="pdf-preview-modal" class="fixed inset-0 bg-black bg-opacity-50 hidden z-50 flex items-center justify-center p-4">
+        <div class="bg-white rounded-lg max-w-4xl w-full max-h-[90vh] overflow-hidden">
+            <div class="p-6 border-b">
+                <h3 class="text-lg font-semibold text-gray-900">PDF预览</h3>
+            </div>
+            <div class="p-6 overflow-y-auto max-h-[70vh]">
+                <div id="pdf-preview-content" class="border border-gray-300 rounded-lg bg-white min-h-[400px] flex items-center justify-center">
+                    <p class="text-gray-500">点击预览按钮生成预览...</p>
+                </div>
+            </div>
+            <div class="p-6 border-t flex justify-end gap-2">
+                <button id="download-from-preview" class="bg-blue-600 hover:bg-blue-700 text-white px-4 py-2 rounded-lg">下载PDF</button>
+                <button id="close-pdf-preview" class="bg-gray-500 hover:bg-gray-600 text-white px-4 py-2 rounded-lg">关闭</button>
+            </div>
+        </div>
+    </div>
+
+    <script>
+        // 应用状态管理
+        class WordPrintApp {
+            constructor() {
+                this.wordBanks = {
+                    ket: ["ability", "able", "about", "above", "abroad", "accept", "accident", "achieve", "act", "action", "active", "activity", "actor", "actress", "actually", "add", "address", "adventure", "advertise", "advice", "advise", "aeroplane", "afford", "afraid", "after", "afternoon", "again", "against", "age", "ago", "agree"],
+                    toefl: ["abandon", "abrupt", "absorb", "abstract", "absurd", "abundant", "accelerate", "accessible", "acclaim", "accommodate", "accumulate", "accurate", "accustomed", "acquaintance", "acquire", "acute", "adequate", "adjacent", "adjust", "administer", "adolescent", "adverse", "advocate", "aesthetic", "affiliate", "affirm", "affluent"],
+                    gre: ["abate", "aberrant", "abeyance", "abscond", "abstemious", "admonish", "adulterate", "aesthetic", "aggregate", "alacrity", "alleviate", "amalgamate", "ambiguous", "ambivalence", "ameliorate", "anachronism", "analogous", "anarchy", "anomalous", "antipathy", "apathy", "appease", "apprise", "approbation", "appropriate", "arduous", "articulate", "ascertain", "ascetic", "assuage", "audacious", "austere"]
+                };
+                
+                this.fontSettings = {
+                    family: 'Helvetica',
+                    weight: 'normal',
+                    style: 'normal'
+                };
+                
+                this.printSettings = {
+                    orientation: 'portrait',
+                    size: 'a4',
+                    margins: { top: 40, right: 40, bottom: 40, left: 40 },
+                    showPageNumbers: false,
+                    showHeader: false,
+                    headerText: ''
+                };
+                
+                this.currentPdfDoc = null;
+                this.loadSettings();
+                this.initializeEventListeners();
+                this.updateWordBankList();
+                this.updateUI();
+            }
+
+            // 本地存储管理
+            saveSettings() {
+                const settings = {
+                    customWordBanks: this.getCustomWordBanks(),
+                    fontSettings: this.fontSettings,
+                    printSettings: this.printSettings
+                };
+                localStorage.setItem('wordPrintSettings', JSON.stringify(settings));
+            }
+
+            loadSettings() {
+                const saved = localStorage.getItem('wordPrintSettings');
+                if (saved) {
+                    const settings = JSON.parse(saved);
+                    if (settings.customWordBanks) {
+                        Object.assign(this.wordBanks, settings.customWordBanks);
+                    }
+                    if (settings.fontSettings) {
+                        this.fontSettings = { ...this.fontSettings, ...settings.fontSettings };
+                    }
+                    if (settings.printSettings) {
+                        this.printSettings = { ...this.printSettings, ...settings.printSettings };
+                    }
+                }
+            }
+
+            getCustomWordBanks() {
+                const custom = {};
+                for (const [key, value] of Object.entries(this.wordBanks)) {
+                    if (!['ket', 'toefl', 'gre'].includes(key)) {
+                        custom[key] = value;
+                    }
+                }
+                return custom;
+            }
+
+            // 事件监听器初始化
+            initializeEventListeners() {
+                // 主要功能
+                document.getElementById('word-source').addEventListener('change', (e) => this.handleWordSourceChange(e));
+                document.getElementById('generate-pdf').addEventListener('click', () => this.handleGeneratePDF());
+                document.getElementById('preview-pdf-btn').addEventListener('click', () => this.handlePreviewPDF());
+                
+                // 字库管理
+                document.getElementById('manage-wordbanks-btn').addEventListener('click', () => this.showWordBankModal());
+                document.getElementById('add-wordbank-btn').addEventListener('click', () => this.showWordBankModal());
+                document.getElementById('delete-wordbank-btn').addEventListener('click', () => this.deleteSelectedWordBank());
+                document.getElementById('save-wordbank-btn').addEventListener('click', () => this.saveNewWordBank());
+                document.getElementById('close-wordbank-modal').addEventListener('click', () => this.hideModal('wordbank-modal'));
+                
+                // 字体管理
+                document.getElementById('manage-fonts-btn').addEventListener('click', () => this.showFontModal());
+                document.getElementById('preview-font-btn').addEventListener('click', () => this.showFontModal());
+                document.getElementById('font-style').addEventListener('change', () => this.updateFontPreview());
+                document.getElementById('custom-preview-text').addEventListener('input', () => this.updateFontPreview());
+                document.getElementById('font-weight-select').addEventListener('change', () => this.updateFontPreview());
+                document.getElementById('font-style-select').addEventListener('change', () => this.updateFontPreview());
+                document.getElementById('apply-font-settings').addEventListener('click', () => this.applyFontSettings());
+                document.getElementById('close-font-modal').addEventListener('click', () => this.hideModal('font-modal'));
+                
+                // 打印管理
+                document.getElementById('manage-print-btn').addEventListener('click', () => this.showPrintModal());
+                document.getElementById('show-header').addEventListener('change', (e) => {
+                    document.getElementById('header-text').disabled = !e.target.checked;
+                });
+                document.getElementById('apply-print-settings').addEventListener('click', () => this.applyPrintSettings());
+                document.getElementById('close-print-modal').addEventListener('click', () => this.hideModal('print-modal'));
+                
+                // PDF预览
+                document.getElementById('download-from-preview').addEventListener('click', () => this.downloadPDFFromPreview());
+                document.getElementById('close-pdf-preview').addEventListener('click', () => this.hideModal('pdf-preview-modal'));
+            }
+
+            // 模态框管理
+            showModal(modalId) {
+                document.getElementById(modalId).classList.remove('hidden');
+            }
+
+            hideModal(modalId) {
+                document.getElementById(modalId).classList.add('hidden');
+            }
+
+            // 字库管理功能
+            showWordBankModal() {
+                this.updateWordBankList();
+                this.showModal('wordbank-modal');
+            }
+
+            updateWordBankList() {
+                const container = document.getElementById('wordbank-list');
+                const select = document.getElementById('word-source');
+                
+                // 更新选择框
+                const currentValue = select.value;
+                select.innerHTML = '<option value="custom">手动输入词库</option>';
+                
+                for (const [key, words] of Object.entries(this.wordBanks)) {
+                    const option = document.createElement('option');
+                    option.value = key;
+                    const isCustom = !['ket', 'toefl', 'gre'].includes(key);
+                    const label = isCustom ? `${key} (自定义, ${words.length}词)` : 
+                                  key === 'ket' ? 'KET 核心词汇 (示例)' :
+                                  key === 'toefl' ? 'TOEFL 高频词汇 (示例)' :
+                                  'GRE 高频词汇 (示例)';
+                    option.textContent = label;
+                    select.appendChild(option);
+                }
+                
+                select.value = currentValue;
+                
+                // 更新字库列表
+                container.innerHTML = '';
+                for (const [key, words] of Object.entries(this.wordBanks)) {
+                    const item = document.createElement('div');
+                    const isBuiltIn = ['ket', 'toefl', 'gre'].includes(key);
+                    item.className = `flex items-center justify-between p-3 border rounded-lg ${isBuiltIn ? 'bg-gray-50' : 'bg-blue-50'}`;
+                    item.innerHTML = `
+                        <div>
+                            <div class="font-medium">${key} ${isBuiltIn ? '(内置)' : '(自定义)'}</div>
+                            <div class="text-sm text-gray-600">${words.length} 个单词</div>
+                        </div>
+                        <div class="flex gap-2">
+                            <button onclick="app.editWordBank('${key}')" class="text-blue-600 hover:text-blue-800 text-sm">编辑</button>
+                            ${!isBuiltIn ? `<button onclick="app.deleteWordBank('${key}')" class="text-red-600 hover:text-red-800 text-sm">删除</button>` : ''}
+                        </div>
+                    `;
+                    container.appendChild(item);
+                }
+                
+                this.updateDeleteButton();
+            }
+
+            updateDeleteButton() {
+                const select = document.getElementById('word-source');
+                const deleteBtn = document.getElementById('delete-wordbank-btn');
+                const selectedKey = select.value;
+                const isCustom = selectedKey !== 'custom' && !['ket', 'toefl', 'gre'].includes(selectedKey);
+                deleteBtn.disabled = !isCustom;
+                deleteBtn.classList.toggle('opacity-50', !isCustom);
+                deleteBtn.classList.toggle('cursor-not-allowed', !isCustom);
+            }
+
+            saveNewWordBank() {
+                const name = document.getElementById('new-wordbank-name').value.trim();
+                const wordsText = document.getElementById('new-wordbank-words').value.trim();
+                
+                if (!name || !wordsText) {
+                    alert('请输入字库名称和单词列表');
+                    return;
+                }
+                
+                const words = wordsText.split('\n').map(w => w.trim()).filter(w => w);
+                if (words.length === 0) {
+                    alert('请输入至少一个单词');
+                    return;
+                }
+                
+                this.wordBanks[name] = words;
+                this.saveSettings();
+                this.updateWordBankList();
+                
+                // 清空输入
+                document.getElementById('new-wordbank-name').value = '';
+                document.getElementById('new-wordbank-words').value = '';
+                
+                alert(`字库 "${name}" 已保存，包含 ${words.length} 个单词`);
+            }
+
+            editWordBank(key) {
+                const words = this.wordBanks[key];
+                document.getElementById('new-wordbank-name').value = key;
+                document.getElementById('new-wordbank-words').value = words.join('\n');
+            }
+
+            deleteWordBank(key) {
+                if (confirm(`确定要删除字库 "${key}" 吗？`)) {
+                    delete this.wordBanks[key];
+                    this.saveSettings();
+                    this.updateWordBankList();
+                    
+                    // 如果当前选中的是被删除的字库，切换到自定义
+                    const select = document.getElementById('word-source');
+                    if (select.value === key) {
+                        select.value = 'custom';
+                        this.handleWordSourceChange({ target: select });
+                    }
+                }
+            }
+
+            deleteSelectedWordBank() {
+                const select = document.getElementById('word-source');
+                const selectedKey = select.value;
+                if (selectedKey !== 'custom' && !['ket', 'toefl', 'gre'].includes(selectedKey)) {
+                    this.deleteWordBank(selectedKey);
+                }
+            }
+
+            // 字体管理功能
+            showFontModal() {
+                this.updateFontModalSettings();
+                this.updateFontPreview();
+                this.showModal('font-modal');
+            }
+
+            updateFontModalSettings() {
+                document.getElementById('font-weight-select').value = this.fontSettings.weight;
+                document.getElementById('font-style-select').value = this.fontSettings.style;
+            }
+
+            updateFontPreview() {
+                const fontFamily = document.getElementById('font-style').value;
+                const fontWeight = document.getElementById('font-weight-select').value;
+                const fontStyle = document.getElementById('font-style-select').value;
+                const customText = document.getElementById('custom-preview-text').value;
+                
+                const previewText = document.getElementById('font-preview-text');
+                previewText.style.fontFamily = fontFamily;
+                previewText.style.fontWeight = fontWeight;
+                previewText.style.fontStyle = fontStyle;
+                
+                if (customText.trim()) {
+                    previewText.textContent = customText;
+                } else {
+                    previewText.textContent = 'The quick brown fox jumps over the lazy dog';
+                }
+            }
+
+            applyFontSettings() {
+                this.fontSettings.family = document.getElementById('font-style').value;
+                this.fontSettings.weight = document.getElementById('font-weight-select').value;
+                this.fontSettings.style = document.getElementById('font-style-select').value;
+                this.saveSettings();
+                this.hideModal('font-modal');
+                alert('字体设置已应用');
+            }
+
+            // 打印管理功能
+            showPrintModal() {
+                this.updatePrintModalSettings();
+                this.showModal('print-modal');
+            }
+
+            updatePrintModalSettings() {
+                document.getElementById('page-orientation').value = this.printSettings.orientation;
+                document.getElementById('page-size').value = this.printSettings.size;
+                document.getElementById('margin-top').value = this.printSettings.margins.top;
+                document.getElementById('margin-right').value = this.printSettings.margins.right;
+                document.getElementById('margin-bottom').value = this.printSettings.margins.bottom;
+                document.getElementById('margin-left').value = this.printSettings.margins.left;
+                document.getElementById('show-page-numbers').checked = this.printSettings.showPageNumbers;
+                document.getElementById('show-header').checked = this.printSettings.showHeader;
+                document.getElementById('header-text').value = this.printSettings.headerText;
+                document.getElementById('header-text').disabled = !this.printSettings.showHeader;
+            }
+
+            applyPrintSettings() {
+                this.printSettings.orientation = document.getElementById('page-orientation').value;
+                this.printSettings.size = document.getElementById('page-size').value;
+                this.printSettings.margins.top = parseInt(document.getElementById('margin-top').value);
+                this.printSettings.margins.right = parseInt(document.getElementById('margin-right').value);
+                this.printSettings.margins.bottom = parseInt(document.getElementById('margin-bottom').value);
+                this.printSettings.margins.left = parseInt(document.getElementById('margin-left').value);
+                this.printSettings.showPageNumbers = document.getElementById('show-page-numbers').checked;
+                this.printSettings.showHeader = document.getElementById('show-header').checked;
+                this.printSettings.headerText = document.getElementById('header-text').value;
+                this.saveSettings();
+                this.hideModal('print-modal');
+                alert('打印设置已应用');
+            }
+
+            // 主要功能
+            handleWordSourceChange(event) {
+                const selected = event.target.value;
+                const textarea = document.getElementById('word-list');
+                
+                if (selected === 'custom') {
+                    textarea.value = '';
+                    textarea.placeholder = '请在此处输入单词，每行一个单词...';
+                } else {
+                    textarea.value = this.wordBanks[selected].join('\n');
+                }
+                
+                this.updateDeleteButton();
+            }
+
+            handleGeneratePDF() {
+                this.showLoading(true);
+                setTimeout(() => {
+                    try {
+                        this.generatePDF(true);
+                    } catch (error) {
+                        console.error("PDF生成失败:", error);
+                        alert("抱歉，PDF生成失败。请检查控制台获取更多信息。");
+                    } finally {
+                        this.showLoading(false);
+                    }
+                }, 50);
+            }
+
+            handlePreviewPDF() {
+                try {
+                    this.generatePDF(false);
+                    this.showModal('pdf-preview-modal');
+                } catch (error) {
+                    console.error("PDF预览失败:", error);
+                    alert("抱歉，PDF预览失败。请检查控制台获取更多信息。");
+                }
+            }
+
+            showLoading(show) {
+                const loading = document.getElementById('loading-indicator');
+                const instructions = document.getElementById('instructions-area');
+                const button = document.getElementById('generate-pdf');
+                
+                if (show) {
+                    loading.classList.remove('hidden');
+                    loading.classList.add('flex');
+                    instructions.classList.add('hidden');
+                    button.disabled = true;
+                    button.classList.add('opacity-50', 'cursor-not-allowed');
+                } else {
+                    loading.classList.add('hidden');
+                    loading.classList.remove('flex');
+                    instructions.classList.remove('hidden');
+                    button.disabled = false;
+                    button.classList.remove('opacity-50', 'cursor-not-allowed');
+                }
+            }
+
+            generatePDF(download = true) {
+                const { jsPDF } = window.jspdf;
+                
+                // 获取页面设置
+                const pageSize = this.printSettings.size === 'a4' ? 'a4' : 
+                               this.printSettings.size === 'letter' ? 'letter' : 'legal';
+                
+                const doc = new jsPDF({ 
+                    orientation: this.printSettings.orientation === 'portrait' ? 'p' : 'l', 
+                    unit: 'pt', 
+                    format: pageSize 
+                });
+
+                const words = document.getElementById('word-list').value.split('\n').filter(w => w.trim() !== '');
+                if (words.length === 0) {
+                    alert("请输入至少一个单词！");
+                    return;
+                }
+                
+                const repetitions = parseInt(document.getElementById('repetitions').value);
+                const rowsPerPage = parseInt(document.getElementById('rows-per-page').value);
+                const lineSpacing = parseInt(document.getElementById('line-spacing').value);
+                const fontSize = parseInt(document.getElementById('font-size').value);
+                
+                // 应用字体设置
+                doc.setFont(this.fontSettings.family);
+
+                const pageHeight = doc.internal.pageSize.getHeight();
+                const pageWidth = doc.internal.pageSize.getWidth();
+                const margins = this.printSettings.margins;
+                let y = margins.top;
+                let pageNumber = 1;
+
+                // 添加页眉
+                if (this.printSettings.showHeader && this.printSettings.headerText) {
+                    doc.setFontSize(12);
+                    doc.text(this.printSettings.headerText, pageWidth / 2, margins.top / 2, { align: 'center' });
+                }
+
+                for (let i = 0; i < words.length; i++) {
+                    const word = words[i];
+                    
+                    if (y > pageHeight - margins.bottom - lineSpacing) {
+                        // 添加页码
+                        if (this.printSettings.showPageNumbers) {
+                            doc.setFontSize(10);
+                            doc.text(`第 ${pageNumber} 页`, pageWidth - margins.right, pageHeight - margins.bottom / 2, { align: 'right' });
+                        }
+                        
+                        doc.addPage();
+                        doc.setFont(this.fontSettings.family);
+                        pageNumber++;
+                        y = margins.top;
+                        
+                        // 添加页眉到新页面
+                        if (this.printSettings.showHeader && this.printSettings.headerText) {
+                            doc.setFontSize(12);
+                            doc.text(this.printSettings.headerText, pageWidth / 2, margins.top / 2, { align: 'center' });
+                        }
+                    }
+
+                    const mainGridHeight = fontSize * 1.1;
+                    const descenderHeight = fontSize * 0.6;
+                    const totalGridHeight = mainGridHeight + descenderHeight;
+                    const baseLineY = y + (lineSpacing - totalGridHeight) / 2 + mainGridHeight;
+                    
+                    const topLineY = baseLineY - mainGridHeight;
+                    const waistLineY = baseLineY - mainGridHeight * 0.5;
+                    const descenderLineY = baseLineY + descenderHeight;
+
+                    doc.setDrawColor(220, 220, 220);
+                    doc.setLineWidth(0.7);
+
+                    // 绘制线条
+                    doc.line(margins.left, topLineY, pageWidth - margins.right, topLineY);
+                    doc.line(margins.left, descenderLineY, pageWidth - margins.right, descenderLineY);
+                    
+                    doc.setLineDashPattern([2, 2], 0);
+                    doc.line(margins.left, waistLineY, pageWidth - margins.right, waistLineY);
+                    doc.line(margins.left, baseLineY, pageWidth - margins.right, baseLineY);
+                    doc.setLineDashPattern([], 0);
+
+                    const wordY = baseLineY;
+                    const columnWidth = (pageWidth - margins.left - margins.right) / (repetitions + 1.5);
+
+                    // 绘制原始单词（黑色）
+                    doc.setTextColor(0, 0, 0);
+                    doc.setFontSize(fontSize);
+                    doc.text(word, margins.left, wordY);
+
+                    // 绘制描红单词（浅灰色）
+                    doc.setTextColor(180, 180, 180);
+                    for (let j = 0; j < repetitions; j++) {
+                        const x = margins.left + columnWidth * (j + 1.2);
+                        doc.text(word, x, wordY);
+                    }
+
+                    y += lineSpacing;
+                }
+
+                // 添加最后一页的页码
+                if (this.printSettings.showPageNumbers) {
+                    doc.setFontSize(10);
+                    doc.setTextColor(0, 0, 0);
+                    doc.text(`第 ${pageNumber} 页`, pageWidth - margins.right, pageHeight - margins.bottom / 2, { align: 'right' });
+                }
+
+                this.currentPdfDoc = doc;
+                
+                if (download) {
+                    doc.save('单词抄写练习.pdf');
+                } else {
+                    // 生成预览
+                    const previewContainer = document.getElementById('pdf-preview-content');
+                    previewContainer.innerHTML = `
+                        <div class="text-center p-8">
+                            <div class="mb-4">
+                                <svg class="w-16 h-16 text-green-500 mx-auto" fill="none" stroke="currentColor" viewBox="0 0 24 24">
+                                    <path stroke-linecap="round" stroke-linejoin="round" stroke-width="2" d="M9 12l2 2 4-4m6 2a9 9 0 11-18 0 9 9 0 0118 0z"></path>
+                                </svg>
+                            </div>
+                            <h4 class="text-lg font-semibold text-gray-900 mb-2">PDF预览已生成</h4>
+                            <div class="text-sm text-gray-600 space-y-1">
+                                <p>📄 总页数: ${pageNumber} 页</p>
+                                <p>📝 单词数量: ${words.length} 个</p>
+                                <p>🔤 字体: ${this.fontSettings.family}</p>
+                                <p>📏 页面: ${pageSize.toUpperCase()} ${this.printSettings.orientation === 'portrait' ? '纵向' : '横向'}</p>
+                            </div>
+                            <p class="text-xs text-gray-500 mt-4">点击"下载PDF"按钮保存文件</p>
+                        </div>
+                    `;
+                }
+            }
+
+            downloadPDFFromPreview() {
+                if (this.currentPdfDoc) {
+                    this.currentPdfDoc.save('单词抄写练习.pdf');
+                    this.hideModal('pdf-preview-modal');
+                } else {
+                    alert('请先生成预览');
+                }
+            }
+
+            updateUI() {
+                // 触发初始化事件
+                document.getElementById('word-source').dispatchEvent(new Event('change'));
+            }
+        }
+
+        // 初始化应用
+        const app = new WordPrintApp();
+    </script>
+</body>
+</html>
+
