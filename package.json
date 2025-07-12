@@ -1,0 +1,25 @@
+{
+  "name": "word-print-generator",
+  "version": "2.0.0",
+  "description": "Enhanced Chinese word tracing PDF generator",
+  "main": "demo.html",
+  "scripts": {
+    "dev": "python3 -m http.server 3000",
+    "start": "python3 -m http.server 8000"
+  },
+  "keywords": [
+    "chinese",
+    "education",
+    "pdf",
+    "word-tracing",
+    "handwriting",
+    "practice"
+  ],
+  "author": "Han Wang",
+  "license": "MIT",
+  "repository": {
+    "type": "git",
+    "url": "git+https://github.com/cswanghan/wordPrint.git"
+  },
+  "homepage": "https://github.com/cswanghan/wordPrint#readme"
+}
