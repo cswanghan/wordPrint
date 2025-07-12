@@ -652,7 +652,11 @@
                         ${fontFamily.startsWith('cursive') ? 
                             '<span class="text-xs text-gray-600">💡 提示：手写体会自动添加字母间距，配合标准四线格使用效果最佳</span>' : 
                             '<span class="text-xs text-gray-600">💡 提示：印刷体适合初学者，字母大小已调整以适配四线格标准</span>'}
-                        <br><span class="text-xs text-blue-600">📏 四线格说明：小写字母如a,c,e主体占腰线到基线；b,d,h上伸到顶线；g,j,p下伸到底线</span>
+                        <br><span class="text-xs text-blue-600">📏 标准四线格：四条等间距线条创建三个相等空间<br>
+                        • 小写字母主体(a,c,e,m,n,o等)：腰线到基线之间<br>
+                        • 上伸字母(b,d,f,h,k,l,t)：从基线延伸到头线<br>  
+                        • 下伸字母(g,j,p,q,y)：从基线延伸到下伸线<br>
+                        • 大写字母：从基线到头线（占上面两个空间）</span>
                     `;
                 }
                 
@@ -909,59 +913,60 @@
                         }
                     }
 
-                    // 标准英文四线格设计 - 正确比例
-                    // 标准比例：第1-2线间距 = 第2-3线间距 > 第3-4线间距
-                    const baseUnit = fontSize * 0.6;  // 基础单位距离
+                    // 标准英文四线格设计 - 等间距四线格
+                    // 原则：四条线的间距完全相等，共创建三个相等的空间
+                    const lineSpacing_uniform = fontSize * 0.8;  // 统一的线间距
                     
-                    // 计算基线位置（第3线）- 整个格子的中心偏下一点
-                    const baseLineY = y + lineSpacing * 0.6;
+                    // 计算中心位置，然后均匀分布四条线
+                    const centerY = y + lineSpacing * 0.5;
                     
-                    // 四线格位置（从上到下）
-                    const topLineY = baseLineY - baseUnit * 2;        // 第1线（顶线）
-                    const waistLineY = baseLineY - baseUnit;          // 第2线（腰线）
-                    // baseLineY 已定义                               // 第3线（基线）
-                    const descenderLineY = baseLineY + baseUnit * 0.7; // 第4线（底线）
+                    // 四线格位置（从上到下，等间距）
+                    const topLineY = centerY - lineSpacing_uniform * 1.5;        // 第1线（顶线）
+                    const midTopLineY = centerY - lineSpacing_uniform * 0.5;     // 第2线（上中线）
+                    const midBottomLineY = centerY + lineSpacing_uniform * 0.5;  // 第3线（下中线，基线）
+                    const bottomLineY = centerY + lineSpacing_uniform * 1.5;     // 第4线（底线）
                     
-                    // 验证间距：
-                    // 第1-2线间距 = baseUnit (fontSize * 0.6)
-                    // 第2-3线间距 = baseUnit (fontSize * 0.6) 
-                    // 第3-4线间距 = baseUnit * 0.7 (fontSize * 0.42)
+                    // 重新命名以符合英文手写习惯
+                    const headLineY = topLineY;        // 头线（大写字母顶部）
+                    const waistLineY = midTopLineY;    // 腰线（小写字母顶部）
+                    const baseLineY = midBottomLineY;  // 基线（所有字母基础线）
+                    const descenderLineY = bottomLineY; // 下伸线（下伸部分底部）
 
                     // 根据线条样式设置绘制线条
                     doc.setDrawColor(220, 220, 220);
                     doc.setLineWidth(0.7);
 
                     if (this.fontSettings.lineStyle === 'standard') {
-                        // 标准英文四线格
-                        // 顶线和底线（实线，较细）
+                        // 标准英文四线格 - 等间距四线
+                        // 头线和下伸线（实线，较细）
                         doc.setLineWidth(0.5);
                         doc.setDrawColor(200, 200, 200);
-                        doc.line(margins.left, topLineY, pageWidth - margins.right, topLineY);
+                        doc.line(margins.left, headLineY, pageWidth - margins.right, headLineY);
                         doc.line(margins.left, descenderLineY, pageWidth - margins.right, descenderLineY);
                         
-                        // 腰线（虚线，重要的小写字母顶部引导线）
+                        // 腰线（虚线，小写字母顶部引导线）
                         doc.setLineDashPattern([3, 2], 0);
                         doc.setDrawColor(180, 180, 180);
                         doc.line(margins.left, waistLineY, pageWidth - margins.right, waistLineY);
                         
-                        // 基线（实线，较粗，最重要的书写基准线）
+                        // 基线（实线，最粗，最重要的书写基准线）
                         doc.setLineDashPattern([], 0);
-                        doc.setLineWidth(0.8);
-                        doc.setDrawColor(150, 150, 150);
+                        doc.setLineWidth(1.0);
+                        doc.setDrawColor(120, 120, 120);
                         doc.line(margins.left, baseLineY, pageWidth - margins.right, baseLineY);
                         
                     } else if (this.fontSettings.lineStyle === 'simple') {
                         // 简单基线模式（只有基线）
                         doc.setLineWidth(0.8);
-                        doc.setDrawColor(180, 180, 180);
+                        doc.setDrawColor(150, 150, 150);
                         doc.line(margins.left, baseLineY, pageWidth - margins.right, baseLineY);
                         
                     } else if (this.fontSettings.lineStyle === 'dotted') {
-                        // 虚线引导模式（所有线都是虚线）
-                        doc.setLineDashPattern([2, 3], 0);
+                        // 虚线引导模式（四条等间距虚线）
+                        doc.setLineDashPattern([3, 2], 0);
                         doc.setLineWidth(0.6);
-                        doc.setDrawColor(200, 200, 200);
-                        doc.line(margins.left, topLineY, pageWidth - margins.right, topLineY);
+                        doc.setDrawColor(180, 180, 180);
+                        doc.line(margins.left, headLineY, pageWidth - margins.right, headLineY);
                         doc.line(margins.left, waistLineY, pageWidth - margins.right, waistLineY);
                         doc.line(margins.left, baseLineY, pageWidth - margins.right, baseLineY);
                         doc.line(margins.left, descenderLineY, pageWidth - margins.right, descenderLineY);
