@@ -994,12 +994,34 @@
                     }
 
                     const wordY = grassLineY;  // 字母应该"坐"在基线（草线）上
-                    const columnWidth = (pageWidth - margins.left - margins.right) / (repetitions + 1.5);
-
+                    
                     // 绘制原始单词（黑色）
                     doc.setTextColor(0, 0, 0);
                     // 使用前面计算好的调整后字体大小
                     doc.setFontSize(adjustedFontSize);
+                    
+                    // 计算当前单词的实际宽度
+                    let actualWordWidth = 0;
+                    if (fontConfig.letterSpacing) {
+                        // 手写体需要计算包含字母间距的总宽度
+                        for (let char of word) {
+                            actualWordWidth += doc.getTextWidth(char) + fontConfig.letterSpacing;
+                        }
+                        actualWordWidth -= fontConfig.letterSpacing; // 减去最后一个字母后的间距
+                    } else {
+                        actualWordWidth = doc.getTextWidth(word);
+                    }
+                    
+                    // 根据单词实际宽度和重复次数计算列宽，增加额外间距防止重叠
+                    const minSpacing = 20; // 最小列间距
+                    const columnWidth = actualWordWidth + minSpacing;
+                    const totalWidth = actualWordWidth + (columnWidth * repetitions);
+                    
+                    // 如果总宽度超过页面宽度，则调整列宽
+                    const availableWidth = pageWidth - margins.left - margins.right;
+                    const scaledColumnWidth = totalWidth > availableWidth 
+                        ? (availableWidth - actualWordWidth) / repetitions 
+                        : columnWidth;
                     
                     // 应用字母间距（如果是手写体）
                     if (fontConfig.letterSpacing) {
@@ -1020,7 +1042,7 @@
                     doc.setFontSize(adjustedFontSize);
                     
                     for (let j = 0; j < repetitions; j++) {
-                        const x = margins.left + columnWidth * (j + 1.2);
+                        const x = margins.left + actualWordWidth + scaledColumnWidth * j + minSpacing;
                         
                         if (fontConfig.letterSpacing) {
                             // 手写体需要增加字母间距
