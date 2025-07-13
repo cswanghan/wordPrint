@@ -890,10 +890,13 @@
                     doc.text(this.printSettings.headerText, pageWidth / 2, margins.top / 2, { align: 'center' });
                 }
 
+                let currentPageRows = 0;  // 跟踪当前页的行数
+                
                 for (let i = 0; i < words.length; i++) {
                     const word = words[i];
                     
-                    if (y > pageHeight - margins.bottom - lineSpacing) {
+                    // 检查是否需要新页面（超过每页行数限制或超出页面底部）
+                    if (currentPageRows >= rowsPerPage || y > pageHeight - margins.bottom - lineSpacing) {
                         // 添加页码
                         if (this.printSettings.showPageNumbers) {
                             doc.setFontSize(10);
@@ -913,6 +916,7 @@
                         }
                         pageNumber++;
                         y = margins.top;
+                        currentPageRows = 0;  // 重置当前页行数计数
                         
                         // 添加页眉到新页面
                         if (this.printSettings.showHeader && this.printSettings.headerText) {
@@ -1027,6 +1031,7 @@
                     }
 
                     y += lineSpacing;
+                    currentPageRows++;  // 增加当前页行数计数
                 }
 
                 // 添加最后一页的页码
