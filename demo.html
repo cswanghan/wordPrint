@@ -334,41 +334,48 @@
                     'Helvetica': { 
                         name: 'Helvetica', 
                         type: 'normal',
-                        description: '标准印刷体，适合初学者'
+                        description: '标准印刷体，适合初学者',
+                        sizeScale: 1.3  // 标准印刷体放大30%
                     },
                     'Times-Roman': { 
                         name: 'Times', 
                         type: 'normal',
-                        description: '传统衬线体，易于阅读'
+                        description: '传统衬线体，易于阅读',
+                        sizeScale: 1.25  // Times字体放大25%
                     },
                     'Courier': { 
                         name: 'Courier', 
                         type: 'normal',
-                        description: '等宽字体，每个字母占相同空间'
+                        description: '等宽字体，每个字母占相同空间',
+                        sizeScale: 1.35  // Courier需要更大的缩放
                     },
                     'cursive-standard': { 
                         name: 'Times', 
                         type: 'italic',
                         letterSpacing: 2,
-                        description: 'D\'Nealian标准手写体'
+                        description: 'D\'Nealian标准手写体',
+                        sizeScale: 1.2  // 手写体稍微放大20%
                     },
                     'cursive-italic': { 
                         name: 'Helvetica', 
                         type: 'oblique',
                         letterSpacing: 3,
-                        description: '斜体手写风格'
+                        description: '斜体手写风格',
+                        sizeScale: 1.25  // 斜体需要25%放大
                     },
                     'cursive-zaner': { 
                         name: 'Times', 
                         type: 'bolditalic',
                         letterSpacing: 2,
-                        description: 'Zaner-Bloser美式手写体'
+                        description: 'Zaner-Bloser美式手写体',
+                        sizeScale: 1.15  // 粗斜体只需15%放大
                     },
                     'cursive-palmer': { 
                         name: 'Courier', 
                         type: 'italic',
                         letterSpacing: 1,
-                        description: 'Palmer方法手写体'
+                        description: 'Palmer方法手写体',
+                        sizeScale: 1.35  // Courier斜体需要更大缩放
                     }
                 };
                 
@@ -650,8 +657,8 @@
                     descriptionEl.innerHTML = `
                         <strong>${fontConfig.description}</strong><br>
                         ${fontFamily.startsWith('cursive') ? 
-                            '<span class="text-xs text-gray-600">💡 提示：手写体会自动添加字母间距，配合标准四线格使用效果最佳</span>' : 
-                            '<span class="text-xs text-gray-600">💡 提示：印刷体适合初学者，小写字母已优化充满第二线和第三线之间</span>'}
+                            '<span class="text-xs text-gray-600">💡 提示：手写体会自动添加字母间距，字母大小已优化适配四线格标准</span>' : 
+                            '<span class="text-xs text-gray-600">💡 提示：字母大小已专门优化，确保小写字母充满第二线和第三线之间</span>'}
                         <br><span class="text-xs text-blue-600">📏 标准四线格（等间距）教学系统：<br>
                         • 第1线 Sky Line（天空线）- 高字母(b,d,f,h,k,l,t)的顶部<br>
                         • 第2线 Dotted Line（虚线）- 小写字母(a,c,e,m,n,o等)的顶部<br>
@@ -980,9 +987,10 @@
 
                     // 绘制原始单词（黑色）
                     doc.setTextColor(0, 0, 0);
-                    // 调整字体大小让小写字母主体充满第二线和第三线之间
-                    // 增加字体大小以确保小写字母的x-height占满虚线到基线的空间
-                    const adjustedFontSize = fontSize * 1.3; // 增大30%让小写字母更饱满
+                    // 根据不同字体类型调整大小，让小写字母主体充满第二线和第三线之间
+                    // 每种字体有自己的缩放比例以确保最佳视觉效果
+                    const fontScale = fontConfig.sizeScale || 1.0;  // 如果没有定义缩放比例，默认不缩放
+                    const adjustedFontSize = fontSize * fontScale;
                     doc.setFontSize(adjustedFontSize);
                     
                     // 应用字母间距（如果是手写体）
