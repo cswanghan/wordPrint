@@ -1012,16 +1012,25 @@
                         actualWordWidth = doc.getTextWidth(word);
                     }
                     
-                    // 根据单词实际宽度和重复次数计算列宽，增加额外间距防止重叠
-                    const minSpacing = 20; // 最小列间距
-                    const columnWidth = actualWordWidth + minSpacing;
-                    const totalWidth = actualWordWidth + (columnWidth * repetitions);
-                    
-                    // 如果总宽度超过页面宽度，则调整列宽
+                    // 计算列间距
+                    const minSpacing = 30; // 增加最小列间距到30pt
                     const availableWidth = pageWidth - margins.left - margins.right;
-                    const scaledColumnWidth = totalWidth > availableWidth 
-                        ? (availableWidth - actualWordWidth) / repetitions 
-                        : columnWidth;
+                    
+                    // 计算每个重复项（包括原始单词）需要的空间
+                    // 总共有 1个原始单词 + repetitions个描红 = repetitions + 1 个单词
+                    const totalWords = repetitions + 1;
+                    const requiredWidth = actualWordWidth * totalWords + minSpacing * repetitions;
+                    
+                    // 如果所需宽度超过可用宽度，动态调整间距
+                    let columnSpacing;
+                    if (requiredWidth > availableWidth) {
+                        // 计算能够容纳所有单词的最大间距
+                        columnSpacing = (availableWidth - actualWordWidth * totalWords) / repetitions;
+                        // 确保至少有一些间距
+                        columnSpacing = Math.max(columnSpacing, 10);
+                    } else {
+                        columnSpacing = minSpacing;
+                    }
                     
                     // 应用字母间距（如果是手写体）
                     if (fontConfig.letterSpacing) {
@@ -1042,7 +1051,9 @@
                     doc.setFontSize(adjustedFontSize);
                     
                     for (let j = 0; j < repetitions; j++) {
-                        const x = margins.left + actualWordWidth + scaledColumnWidth * j + minSpacing;
+                        // 计算每个描红单词的起始位置
+                        // 原始单词在 margins.left，每个描红单词依次向右偏移
+                        const x = margins.left + (actualWordWidth + columnSpacing) * (j + 1);
                         
                         if (fontConfig.letterSpacing) {
                             // 手写体需要增加字母间距
