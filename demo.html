@@ -651,13 +651,13 @@
                         <strong>${fontConfig.description}</strong><br>
                         ${fontFamily.startsWith('cursive') ? 
                             '<span class="text-xs text-gray-600">💡 提示：手写体会自动添加字母间距，配合标准四线格使用效果最佳</span>' : 
-                            '<span class="text-xs text-gray-600">💡 提示：印刷体适合初学者，字母大小已调整以适配四线格标准</span>'}
-                        <br><span class="text-xs text-blue-600">📏 标准英文四线格教学系统：<br>
-                        • Sky Line（天空线）- 高字母(b,d,f,h,k,l,t)的顶部边界<br>
-                        • Dotted Line（虚线）- 小写字母(a,c,e,m,n,o等)的顶部<br>
-                        • Grass Line（草线/基线）- 所有字母都"坐"在这条线上<br>  
-                        • Worm Line（蚯蚓线）- 下伸字母(g,j,p,q,y)的底部边界<br>
-                        • 大写字母：从草线到天空线</span>
+                            '<span class="text-xs text-gray-600">💡 提示：印刷体适合初学者，小写字母已优化充满第二线和第三线之间</span>'}
+                        <br><span class="text-xs text-blue-600">📏 标准四线格（等间距）教学系统：<br>
+                        • 第1线 Sky Line（天空线）- 高字母(b,d,f,h,k,l,t)的顶部<br>
+                        • 第2线 Dotted Line（虚线）- 小写字母(a,c,e,m,n,o等)的顶部<br>
+                        • 第3线 Grass Line（草线）- 所有字母都"坐"在这条线上<br>  
+                        • 第4线 Worm Line（蚯蚓线）- 下伸字母(g,j,p,q,y)的底部<br>
+                        ⚡ 四条线间距完全相等，创建三个等高空间</span>
                     `;
                 }
                 
@@ -914,28 +914,25 @@
                         }
                     }
 
-                    // 标准英文四线格设计 - 基于教学标准
-                    // 基于搜索结果：Top Line, Dotted Middle Line, Baseline, Descender Line
+                    // 标准英文四线格设计 - 等高间距
+                    // 四条线之间的间距必须完全相等
                     
-                    // 字母高度比例（基于教学标准）
-                    const smallLetterHeight = fontSize * 0.6;      // 小写字母主体高度(a,c,e等)
-                    const tallLetterHeight = fontSize * 1.2;       // 高字母总高度(b,d,f等) 
-                    const descenderHeight = fontSize * 0.4;        // 下伸部分高度(g,j,p等)
+                    const lineGap = fontSize * 0.7;    // 统一的线间距
                     
-                    // 计算基线位置（所有字母都"坐"在这条线上）
+                    // 计算基线位置（第3条线，所有字母都"坐"在这条线上）
                     const baseLineY = y + lineSpacing * 0.6;
                     
-                    // 四线格位置（从上到下）
-                    const topLineY = baseLineY - tallLetterHeight;              // 顶线（高字母顶部）
-                    const middleLineY = baseLineY - smallLetterHeight;          // 中线（小写字母顶部）
-                    // baseLineY 已定义                                       // 基线（所有字母基础）
-                    const descenderLineY = baseLineY + descenderHeight;        // 下伸线（下伸字母底部）
+                    // 四线格位置（从上到下，等间距）
+                    const skyLineY = baseLineY - lineGap * 2;       // Sky Line（第1条线）
+                    const dottedLineY = baseLineY - lineGap;        // Dotted Middle Line（第2条线）
+                    const grassLineY = baseLineY;                   // Baseline/Grass Line（第3条线）
+                    const wormLineY = baseLineY + lineGap;          // Descender/Worm Line（第4条线）
                     
-                    // 重新命名以符合标准术语
-                    const skyLineY = topLineY;          // Sky Line - 高字母顶部边界
-                    const dottedLineY = middleLineY;    // Dotted Middle Line - 小写字母顶部
-                    const grassLineY = baseLineY;       // Baseline (Grass Line) - 字母基础线
-                    const wormLineY = descenderLineY;   // Descender Line - 下伸字母底部
+                    // 验证间距：
+                    // Sky Line 到 Dotted Line = lineGap
+                    // Dotted Line 到 Grass Line = lineGap  
+                    // Grass Line 到 Worm Line = lineGap
+                    // 三个间距完全相等！
 
                     // 根据线条样式设置绘制线条
                     doc.setDrawColor(220, 220, 220);
@@ -983,8 +980,10 @@
 
                     // 绘制原始单词（黑色）
                     doc.setTextColor(0, 0, 0);
-                    // 使用原始字体大小，让jsPDF自然处理字母高度
-                    doc.setFontSize(fontSize);
+                    // 调整字体大小让小写字母主体充满第二线和第三线之间
+                    // 增加字体大小以确保小写字母的x-height占满虚线到基线的空间
+                    const adjustedFontSize = fontSize * 1.3; // 增大30%让小写字母更饱满
+                    doc.setFontSize(adjustedFontSize);
                     
                     // 应用字母间距（如果是手写体）
                     if (fontConfig.letterSpacing) {
@@ -1002,7 +1001,7 @@
                     const opacity = this.fontSettings.traceOpacity || 180;
                     doc.setTextColor(opacity, opacity, opacity);
                     // 确保描红字体大小与原始字体一致
-                    doc.setFontSize(fontSize);
+                    doc.setFontSize(adjustedFontSize);
                     
                     for (let j = 0; j < repetitions; j++) {
                         const x = margins.left + columnWidth * (j + 1.2);
